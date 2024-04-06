@@ -1,4 +1,4 @@
-﻿namespace EFCoreSeeder.Logging;
+﻿namespace EntityFrameworkCore.Seeding.Logging;
 
 public enum LoggingTypes
 {

@@ -4,9 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Refreshing;
+namespace EntityFrameworkCore.Seeding.Logging;
 
-public interface ISeederRefreshingService
+public enum SeederCommands
 {
-
+    Seeding,
+    Refreshing,
+    None
 }

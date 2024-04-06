@@ -1,21 +1,17 @@
-﻿using EFCoreSeeder.History;
-using EFCoreSeeder.Logging;
-using EFCoreSeeder.Reload;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using EntityFrameworkCore.Seeding.History;
+using EntityFrameworkCore.Seeding.Logging;
+using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Options;
+namespace EntityFrameworkCore.Seeding.Options;
 
 public interface ISeederOptionsBuilder
 {
-    public SeederOptionsBuilder HasRefreshingBehaviour(RefreshBehaviours behaviour, Expression<Func<int, int>>? seedingAlterationFunction = null);
+    public SeederOptionsBuilder HasDataVolumeIncreasingServices(Expression<Func<int, int>>? alterationFunction = null);
     public SeederOptionsBuilder OverrideExistingData(bool flag = true);
-    public SeederOptionsBuilder SaveDataAfterFinishing(bool flag = false);
-    public SeederOptionsBuilder LogTo<TLogger>(SeederCommands commands = SeederCommands.Seeding);
-    public SeederOptionsBuilder LogTo(LoggingTypes loggingType, SeederCommands commands = SeederCommands.Seeding);
-    public SeederOptionsBuilder HasHistory(HistoryStoreTypes historyStoreType);
+    public SeederOptionsBuilder SaveDataAfterFinishing(bool flag = true);
+    public SeederOptionsBuilder UseLoggerFactory<TLoggerFactory>(SeederCommands commands = SeederCommands.Seeding)
+        where TLoggerFactory : class, ILoggerFactory;
+    public SeederOptionsBuilder UseLogger<TLogger>(SeederCommands commands = SeederCommands.Seeding)
+        where TLogger : class, ILogger;
 }

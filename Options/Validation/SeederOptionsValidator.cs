@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Options.Validation;
+namespace EntityFrameworkCore.Seeding.Options.Validation;
 
 public class SeederOptionsValidator
 {

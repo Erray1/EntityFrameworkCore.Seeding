@@ -1,12 +1,8 @@
-﻿using EFCoreSeeder.History;
-using EFCoreSeeder.Logging;
-using EFCoreSeeder.Modelling;
-using EFCoreSeeder.Reload;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+﻿using EntityFrameworkCore.Seeding.History;
+using EntityFrameworkCore.Seeding.Logging;
 using System.Linq.Expressions;
 
-namespace EFCoreSeeder.Options;
+namespace EntityFrameworkCore.Seeding.Options;
 
 public class SeederOptionsBuilder : ISeederOptionsBuilder
 {
@@ -16,16 +12,14 @@ public class SeederOptionsBuilder : ISeederOptionsBuilder
         _options = options;
     }
     public SeederOptions Build() => _options;
-    public SeederOptionsBuilder HasRefreshingBehaviour(RefreshBehaviours behaviour, Expression<Func<int, int>>? seedingAlterationFunction = null)
+    public SeederOptionsBuilder HasDataVolumeIncreasingServices(Expression<Func<int, int>>? alterationFunction = null)
     {
-        _options.RefreshBehaviour = behaviour;
-        if (behaviour != RefreshBehaviours.NoData) _options.CanRefreshData = true;
-        if (seedingAlterationFunction is not null)
+        _options.CanIncreaseDataVolume = true;
+        if (alterationFunction is not null)
         {
-            _options.SeedingAlterationFunction = seedingAlterationFunction.Compile();
-            _options.HasRefreshFunction = true;
+            _options.VolumeIncreasingFunction = alterationFunction.Compile();
+            _options.HasVolumeIncreadingFunction = true;
         }
-
         return this;
     }
 
@@ -39,32 +33,20 @@ public class SeederOptionsBuilder : ISeederOptionsBuilder
         _options.SaveDataAfterFinishing = flag;
         return this;
     }
-
-    public SeederOptionsBuilder LogTo<TLogger>(SeederCommands commands = SeederCommands.Seeding)
-    {
-        _options.CommandsLogged = commands;
-        _options.LoggerType = typeof(TLogger);
-        return this;
-    }
-    public SeederOptionsBuilder LogTo(LoggingTypes loggingType, SeederCommands commands = SeederCommands.Seeding)
-    {
-        _options.CommandsLogged = commands;
-        switch (loggingType)
-        {
-            case LoggingTypes.ToConsole:
-                _options.LoggerType = typeof(ConsoleLogger);
-                break;
-            case LoggingTypes.NoLog:
-                _options.LoggerType = null;
-                break;
-        }
-        return this;
         
-    }
     public SeederOptionsBuilder HasHistory(HistoryStoreTypes historyStoreType)
     {
         _options.HistoryStorageLocation = historyStoreType;
         return this;
     }
-    
+
+    SeederOptionsBuilder ISeederOptionsBuilder.UseLoggerFactory<TLoggerFactory>(SeederCommands commands)
+    {
+        throw new NotImplementedException();
+    }
+
+    SeederOptionsBuilder ISeederOptionsBuilder.UseLogger<TLogger>(SeederCommands commands)
+    {
+        throw new NotImplementedException();
+    }
 }

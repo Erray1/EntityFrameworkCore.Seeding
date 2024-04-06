@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Modelling;
+namespace EntityFrameworkCore.Seeding.Modelling;
 
 public abstract class SeederInfoBase
 {

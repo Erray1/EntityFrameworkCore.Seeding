@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Options;
+namespace EntityFrameworkCore.Seeding.Options;
 
 public interface ISeederOptionsProvider
 {

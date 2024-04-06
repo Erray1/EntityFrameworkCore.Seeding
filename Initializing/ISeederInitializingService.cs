@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Initializing;
+namespace EntityFrameworkCore.Seeding.Initializing;
 
 public interface ISeederInitializingService
 {

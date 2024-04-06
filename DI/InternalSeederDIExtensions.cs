@@ -1,21 +1,14 @@
-﻿using EFCoreSeeder.Modelling;
-using EFCoreSeeder.Options;
-using EFCoreSeeder.Refreshing;
+﻿using EntityFrameworkCore.Seeding.Modelling;
+using EntityFrameworkCore.Seeding.Modelling.Utilities;
+using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace EFCoreSeeder.DI;
+namespace EntityFrameworkCore.Seeding.DI;
 
 public static partial class InternalSeederDIExtensions
 {
-    public static IServiceCollection ConfigureSeederOptions<TDbContext, TSeeder>(this IServiceCollection services, Action<ISeederOptionsBuilder>? optionsAction)
+    public static IServiceCollection ConfigureSeederOptions<TDbContext, TSeeder>(this IServiceCollection services, Action<ISeederOptionsBuilder>? optionsAction, out SeederOptions options)
         where TSeeder : SeederModel<TDbContext>
         where TDbContext : DbContext
     {
@@ -27,14 +20,14 @@ public static partial class InternalSeederDIExtensions
             optionsAction.Invoke(builder);
         }
 
-        var options = builder.Build();
+        options = builder.Build();
 
         services.AddKeyedSingleton(new SeederOptionsProvider(options), seederType.Name);
 
         return services;
     }
 
-    public static IServiceCollection ConfigureSeederModel<TDbContext, TSeeder>(this IServiceCollection services)
+    public static IServiceCollection ConfigureSeederModel<TDbContext, TSeeder>(this IServiceCollection services, bool isConfigurerArtificial)
         where TSeeder : SeederModel<TDbContext>
         where TDbContext : DbContext
     {
@@ -43,10 +36,10 @@ public static partial class InternalSeederDIExtensions
 
 
         var seederModel = ((SeederModel<TDbContext>)(Activator.CreateInstance(seederType)!));
-        var builder = new SeederModelBuilder<TDbContext>(new SeederModelInfo());
+        var builder = new SeederModelBuilder<TDbContext>(SeederModelScaffolder.CreateEmptyFromDbContext<TDbContext>());
         seederModel.CreateModel(builder);
 
-        services.AddKeyedSingleton(new SeederModelProvider((SeederModelInfo)builder.Finalize()), seederType.Name);
+        services.AddKeyedSingleton(new SeederModelProvider((SeederModelInfo)builder.Build()), seederType.Name);
 
         return services;
     }
@@ -60,9 +53,8 @@ public static partial class InternalSeederDIExtensions
         return services;
     }
 
-    public static IServiceCollection AddRefreshingServices(this IServiceCollection services)
+    public static IServiceCollection AddVolumeIncreasingServices(this IServiceCollection services, Func<int, int>? volumeIncreasingFunction)
     {
-        services.AddScoped<ISeederRefreshingService, SeederRefreshingService>();
         // Add history
         return services;
     }

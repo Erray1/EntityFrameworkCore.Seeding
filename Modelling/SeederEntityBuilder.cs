@@ -1,41 +1,38 @@
-﻿using EFCoreSeeder.Modelling.Utilities;
-using EFCoreSeeder.Reload;
-using EFCoreSeeder.StockData;
+﻿using EntityFrameworkCore.Seeding.StockData;
 using System.Linq.Expressions;
 
-namespace EFCoreSeeder.Modelling;
+namespace EntityFrameworkCore.Seeding.Modelling;
 public class SeederEntityBuilder<TEntity>
+    where TEntity : class
 {
     public SeederEntityInfo Entity { get; set; }
     public SeederEntityBuilder(SeederEntityInfo info)
     {
         Entity = info;
     }
-    public SeederEntityBuilder<TEntity> HasValues<Tin>(IEnumerable<Tin> values) where Tin : class
+    public SeederEntityBuilder<TEntity> HasValues(List<TEntity> values) 
     {
+        Entity.PossibleValues = values.Cast<object>().ToList(); // А нормально ли это???
         return this;
     }
-    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection<Tin> values)
+
+    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values)
     {
+        Entity.LoadsData = true;
+        Entity.LoadedValues = values;
         return this;
     }
-    public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(Expression<Func<TEntity, TRelatedEntity>> keyExpression)
+
+    public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(int probability)
     {
+        var relatedEntityInfo = Entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
+        Entity.NullableLinkedEntitiesProbabilities[relatedEntityInfo] = probability;
         return this;
     }
+
     public void HasRandomValues()
     {
-        var allProperties = typeof(TEntity)
-            .GetProperties()
-            .Select(prop => prop.Name)
-            .ToList();
-
-        var notConfiguredProperties = allProperties
-            .Where(x => Entity.Properties
-                .Select(prop => prop.PropertyName)
-                .Contains(x))
-            .Select(x => createPropertyInfo(x))
-            .ToList();
+        var notConfiguredProperties = getNotConfiguredProperties();
 
         foreach (var property in notConfiguredProperties)
         {
@@ -43,76 +40,39 @@ public class SeederEntityBuilder<TEntity>
             property.IsConfigured = true;
         }
         Entity.IsConfigured = true;
-            
     }
-    public SeederEntityBuilder<TEntity> HasRefreshBehaviour(RefreshBehaviours behaviour)
-    {
-        Entity.OverrideRefreshBehaviour = behaviour;
-        return this;
-    }
-    public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated)
 
+    public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated)
     {
         Entity.TimesCreated = timesCreated;
         return this;
     }
+
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated, int locality)
     {
-        Entity.TimesCreated += timesCreated;
+        Entity.TimesCreated = timesCreated;
         Entity.Locality = locality;
         return this;
     }
+
     public SeederPropertyBuilder<TProperty> Property<TProperty>(Expression<Func<TEntity, TProperty>> keyExpression)
     {
-        var propertyInfo = getOrCreatePropertyInfo(keyExpression);
-
-        beginPropertyTracking(propertyInfo);
+        var propertyInfo = getPropertyInfo(keyExpression);
         
         return new SeederPropertyBuilder<TProperty>(propertyInfo);
     }
-    public void FillOtherPropertiesWithRandomValues()
+    
+    private SeederPropertyInfo getPropertyInfo<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
     {
-        var allProperties = typeof(TEntity)
-            .GetProperties()
-            .Select(prop => prop.Name)
-            .ToList();
-
-        var notConfiguredProperties = allProperties
-            .Where(x => Entity.Properties
-                .Select(prop => prop.PropertyName)
-                .Contains(x))
-            .Select(x => createPropertyInfo(x))
-            .ToList();
-
-        foreach (var property in notConfiguredProperties)
-        {
-            property.AreValuesRandom = true;
-            property.IsConfigured = true;
-        }
-        Entity.IsConfigured = true;
-    }
-    private SeederPropertyInfo getOrCreatePropertyInfo<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
-    {
-        var propertyName = nameof(TProperty); // ЗАМЕНИТЬ
-        var trackedProperty = Entity.Properties.SingleOrDefault(p => p.PropertyName == propertyName);
+        var propertyType = typeof(TProperty); // ЗАМЕНИТЬ
+        var trackedProperty = Entity.Properties.SingleOrDefault(p => p.PropertyType == propertyType);
         if (trackedProperty is not null) return trackedProperty;
-        return new(nameof(TProperty));
-    }
-    private SeederPropertyInfo createPropertyInfo(string propertyName)
-    {
-        var property = new SeederPropertyInfo(propertyName);
-
-        beginPropertyTracking(property);
-        return property;    
-    }
-    private void beginPropertyTracking(SeederPropertyInfo propertyInfo)
-    {
-        Entity.Properties.Add(propertyInfo);
+        return new(typeof(TProperty));
     }
 
-    public object Build()
+    private List<SeederPropertyInfo> getNotConfiguredProperties()
     {
-        throw new NotImplementedException();
+        return Entity.Properties.Where(x => !x.IsConfigured).ToList();
     }
 }
 

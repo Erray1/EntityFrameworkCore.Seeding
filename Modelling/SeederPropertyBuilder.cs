@@ -1,12 +1,6 @@
-﻿using EFCoreSeeder.Modelling.Utilities;
-using EFCoreSeeder.StockData;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using EntityFrameworkCore.Seeding.StockData;
 
-namespace EFCoreSeeder.Modelling;
+namespace EntityFrameworkCore.Seeding.Modelling;
 
 public class SeederPropertyBuilder<TProperty>
 {
@@ -17,36 +11,25 @@ public class SeederPropertyBuilder<TProperty>
     }
     public SeederPropertyBuilder<TProperty> HasValues<Tin>(IEnumerable<Tin> values) where Tin : class
     {
-        tryThrowAlreadyConfiguredException();
         _property.PossibleValues = values;
         _property.IsConfigured = true;
         return this;
     }
-    public SeederPropertyBuilder<TProperty> HasValues<Tin>(string filePath)
+    public SeederPropertyBuilder<TProperty> HasValues<Tin>(string jsonRelativePath)
     {
-        tryThrowAlreadyConfiguredException();
         _property.IsConfigured = true;
         return this;
     }
-    public SeederPropertyBuilder<TProperty> HasValues<Tin>(SeederStockDataCollection<Tin> values)
+    public SeederPropertyBuilder<TProperty> HasValues(SeederStockDataCollection values)
     {
-        tryThrowAlreadyConfiguredException();
         _property.PossibleValues = values;
         _property.IsConfigured = true;
         return this;
     }
     public SeederPropertyBuilder<TProperty> HasRandomValues()
     {
-        tryThrowAlreadyConfiguredException();
         _property.AreValuesRandom = true;
         _property.IsConfigured = true;
         return this;
-    }
-    private void tryThrowAlreadyConfiguredException()
-    {
-        if (_property.IsConfigured)
-        {
-            throw new Exception($"The property {_property.PropertyName} has already been configured");
-        }
     }
 }

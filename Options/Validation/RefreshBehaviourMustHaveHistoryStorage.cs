@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Options.Validation;
+namespace EntityFrameworkCore.Seeding.Options.Validation;
 internal class RefreshBehaviourMustHaveHistoryStorage : ISeederOptionsRule
 {
     public void ValidateAndThrowException(SeederOptions options)

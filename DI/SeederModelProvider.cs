@@ -1,4 +1,4 @@
-﻿using EFCoreSeeder.Modelling;
+﻿using EntityFrameworkCore.Seeding.Modelling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -8,7 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.DI;
+namespace EntityFrameworkCore.Seeding.DI;
 
 public sealed class SeederModelProvider
 {

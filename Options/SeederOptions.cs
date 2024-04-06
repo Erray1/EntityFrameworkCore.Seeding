@@ -1,26 +1,20 @@
-﻿using EFCoreSeeder.History;
-using EFCoreSeeder.Logging;
-using EFCoreSeeder.Modelling;
-using EFCoreSeeder.Reload;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using EntityFrameworkCore.Seeding.History;
+using EntityFrameworkCore.Seeding.Logging;
 
-namespace EFCoreSeeder.Options;
+
+namespace EntityFrameworkCore.Seeding.Options;
 
 public class SeederOptions
 {
     public bool OverrideExistingData { get; set; } = true;
     public bool SaveDataAfterFinishing { get; set; } = true;
-    public bool CanRefreshData { get; set; } = false;
-    public RefreshBehaviours? RefreshBehaviour { get; set; }
-    public bool HasRefreshFunction { get; set; } = false;
-    public Func<int, int>? SeedingAlterationFunction { get; set; }
+    public bool CanIncreaseDataVolume { get; set; } = false;
+    public bool HasVolumeIncreasingFunction { get; set; } = false;
+    public Func<int, int>? VolumeIncreasingFunction { get; set; }
     public HistoryStoreTypes HistoryStorageLocation { get; set; } = HistoryStoreTypes.NoHistory;
+    public bool HasLogger { get; set;} = false;
+    public bool HasLoggerFactory { get; set; } = false;
     public SeederCommands CommandsLogged { get; set; } = SeederCommands.Seeding;
     public Type? LoggerType { get; set; }
-
+    public Type? LoggerFactoryType { get; set; }
 }

@@ -1,10 +1,10 @@
-﻿using EFCoreSeeder.DI;
-using EFCoreSeeder.Modelling;
-using EFCoreSeeder.Options;
+﻿using EntityFrameworkCore.Seeding.DI;
+using EntityFrameworkCore.Seeding.Modelling;
+using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace EFCoreSeeder;
+namespace EntityFrameworkCore.Seeding;
 
 public static class ServiceCollectionExtensions
 {
@@ -12,12 +12,20 @@ public static class ServiceCollectionExtensions
         where TDbContext : DbContext
         where TSeeder : SeederModel<TDbContext>
     {
-        services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction)
-            .ConfigureSeederModel<TDbContext, TSeeder>()
-            .AddSeederLoggingServices()
-            .AddInitialSeedingServices()
-            .AddRefreshingServices();
+        services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction, out SeederOptions options)
+            .ConfigureSeederModel<TDbContext, TSeeder>(options.ConfigureArtificially);
 
+        if (options.HasLogger)
+        {
+            services.AddSeederLoggingServices();
+        }
+
+        services.AddInitialSeedingServices();
+        if (options.CanIncreaseDataVolume)
+        {
+            services.AddVolumeIncreasingServices(options.VolumeIncreasingFunction);
+        }
+            
         return services;
     }
 }

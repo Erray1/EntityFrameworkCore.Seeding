@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EFCoreSeeder.Options;
+using EntityFrameworkCore.Seeding.Options;
 
-namespace EFCoreSeeder.DI;
+namespace EntityFrameworkCore.Seeding.DI;
 
 public class SeederOptionsProvider : ISeederOptionsProvider
 {

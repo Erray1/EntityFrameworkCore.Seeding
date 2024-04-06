@@ -5,18 +5,17 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Modelling;
+namespace EntityFrameworkCore.Seeding.Modelling;
 public class SeederPropertyInfo : SeederInfoBase
 {
-    public SeederPropertyInfo(string propertyName)
+    public SeederPropertyInfo(Type propertyType)
     {
-        PropertyName = propertyName;
+        PropertyType = propertyType;
         IsConfigured = false;
         AreValuesRandom = false;
     }
     public bool IsConfigured;
-    public PropertyTypes PropertyType { get; set; }
-    public string PropertyName { get; set; }
+    public Type PropertyType { get; set; }
     public object PossibleValues { get; set; }
     public bool AreValuesRandom { get; set; }
 }

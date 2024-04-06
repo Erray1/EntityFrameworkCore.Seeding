@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.StockData;
+namespace EntityFrameworkCore.Seeding.StockData;
 
 internal sealed class StockDataRequest
 {

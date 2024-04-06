@@ -1,39 +1,46 @@
-﻿using EFCoreSeeder.Modelling.Utilities;
+﻿using EntityFrameworkCore.Seeding.Modelling.Utilities;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
-namespace EFCoreSeeder.Modelling;
+namespace EntityFrameworkCore.Seeding.Modelling;
 
-public sealed class SeederModelBuilder<TDbContext> : ISeederBuilderFinalizer, ISeederModelBuilder<TDbContext>, IDisposable where TDbContext : DbContext
+public sealed class SeederModelBuilder<TDbContext> : ISeederBuilder, ISeederModelBuilder<TDbContext> where TDbContext : DbContext
 {
     private readonly SeederModelInfo _model;
     public SeederModelBuilder(SeederModelInfo model)
     {
         _model = model;
     }
-    public SeederInfoBase Finalize()
+    public SeederInfoBase Build()
     {
-        // Set dispose flag
         return _model;
     }
 
-    public SeederEntityBuilder<TEntity> Entity<TEntity>(Expression<Func<TDbContext, TEntity>> keyExpression)
+    public SeederEntityBuilder<TEntity> Entity<TEntity>()
     {
-        var entityInfo = getOrCreateEntityInfo(keyExpression);
+        var entityInfo = getOrCreateEntityInfo<TEntity>();
         return new SeederEntityBuilder<TEntity>(entityInfo);
     }
-
-    private SeederEntityInfo getOrCreateEntityInfo<TEntity>(Expression<Func<TDbContext, TEntity>> keyExpression)
+    public void RandomizeEveryEntity()
     {
-        throw new NotImplementedException();
+
+    }
+
+    private SeederEntityInfo getOrCreateEntityInfo<TEntity>()
+    {
+        var trackedEntity = _model.Entities.SingleOrDefault(x => x.EntityType == typeof(TEntity));
+        if (trackedEntity is not null) return trackedEntity;
+        return createEntityInfo<TEntity>();
+
+    }
+    private SeederEntityInfo createEntityInfo<TEntity>()
+    {
+        var entity = new SeederEntityInfo(typeof(TEntity));
+        beginEntityTracking(entity);
+        return entity;
     }
     private void beginEntityTracking(SeederEntityInfo entityInfo) 
     { 
-        
-    }
-
-    public void Dispose()
-    {
-        throw new NotImplementedException();
+        _model.Entities.Add(entityInfo);
     }
 }
+

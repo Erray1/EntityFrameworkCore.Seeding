@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Modelling.Utilities;
+namespace EntityFrameworkCore.Seeding.Modelling.Utilities;
 
 public interface ISeederPropertyBuilder<TProperty>
 {

@@ -1,6 +1,6 @@
-﻿using EFCoreSeeder.DI;
-using EFCoreSeeder.Modelling;
-using EFCoreSeeder.Options;
+﻿using EntityFrameworkCore.Seeding.DI;
+using EntityFrameworkCore.Seeding.Modelling;
+using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Initializing;
+namespace EntityFrameworkCore.Seeding.Initializing;
 
 public class SeederInitializingService<TDbContext, TSeeder> : IHostedService, ISeederInitializingService
     where TDbContext : DbContext

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EFCoreSeeder.Modelling.Utilities;
+namespace EntityFrameworkCore.Seeding.Modelling.Utilities;
 
-public interface ISeederBuilderFinalizer
+public interface ISeederBuilder
 {
-    public SeederInfoBase Finalize();
+    public SeederInfoBase Build();
 }
