@@ -18,7 +18,7 @@ public class SeederOptionsBuilder : ISeederOptionsBuilder
         if (alterationFunction is not null)
         {
             _options.VolumeIncreasingFunction = alterationFunction.Compile();
-            _options.HasVolumeIncreadingFunction = true;
+            //_options.HasVolumeIncreadingFunction = true;
         }
         return this;
     }

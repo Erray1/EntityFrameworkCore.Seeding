@@ -17,4 +17,5 @@ public sealed class SeederModelProvider
     {
         _model = model;
     }
+    public SeederModelInfo GetModel() { return _model; }
 }

@@ -16,10 +16,11 @@ public class SeederEntityBuilder<TEntity>
         return this;
     }
 
-    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values)
+    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values, bool strictPropertyMatching = true)
     {
         Entity.LoadsData = true;
         Entity.LoadedValues = values;
+        Entity.StrictMatchingForLoadedData = strictPropertyMatching;
         return this;
     }
 
@@ -64,10 +65,8 @@ public class SeederEntityBuilder<TEntity>
     
     private SeederPropertyInfo getPropertyInfo<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
     {
-        var propertyType = typeof(TProperty); // ЗАМЕНИТЬ
-        var trackedProperty = Entity.Properties.SingleOrDefault(p => p.PropertyType == propertyType);
-        if (trackedProperty is not null) return trackedProperty;
-        return new(typeof(TProperty));
+        throw new NotImplementedException(0);
+
     }
 
     private List<SeederPropertyInfo> getNotConfiguredProperties()

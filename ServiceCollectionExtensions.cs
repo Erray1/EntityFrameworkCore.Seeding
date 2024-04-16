@@ -12,8 +12,7 @@ public static class ServiceCollectionExtensions
         where TDbContext : DbContext
         where TSeeder : SeederModel<TDbContext>
     {
-        services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction, out SeederOptions options)
-            .ConfigureSeederModel<TDbContext, TSeeder>(options.ConfigureArtificially);
+        services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction, out SeederOptions options);
 
         if (options.HasLogger)
         {

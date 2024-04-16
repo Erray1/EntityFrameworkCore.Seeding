@@ -16,6 +16,7 @@ public sealed class SeederModelBuilder<TDbContext> : ISeederBuilder, ISeederMode
     }
 
     public SeederEntityBuilder<TEntity> Entity<TEntity>()
+        where TEntity : class
     {
         var entityInfo = getOrCreateEntityInfo<TEntity>();
         return new SeederEntityBuilder<TEntity>(entityInfo);

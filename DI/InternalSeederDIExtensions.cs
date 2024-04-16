@@ -32,10 +32,9 @@ public static partial class InternalSeederDIExtensions
         where TDbContext : DbContext
     {
         var seederType = typeof(TSeeder);
-        // REMAKE
 
 
-        var seederModel = ((SeederModel<TDbContext>)(Activator.CreateInstance(seederType)!));
+        var seederModel = (TSeeder)Activator.CreateInstance(seederType)!;
         var builder = new SeederModelBuilder<TDbContext>(SeederModelScaffolder.CreateEmptyFromDbContext<TDbContext>());
         seederModel.CreateModel(builder);
 

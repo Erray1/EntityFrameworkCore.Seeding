@@ -28,7 +28,7 @@ public static class SeederModelValidator
         foreach (var entity in entities)
         {
             builder.AppendFormat("{0}: ", entity.EntityType.Name);
-            builder.Append(entity.Properties.Select(x => x.PropertyName).ToArray());
+            builder.Append(entity.Properties.Select(x => x.PropertyType).ToArray());
             builder.AppendLine();
         }
         return builder.ToString();

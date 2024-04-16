@@ -6,7 +6,7 @@ public sealed class SeederModelInfo : SeederInfoBase
     {
         IsConfigured = false;
     }
-    public bool IsConfigured;
+    public bool IsConfigured { get; set; }
     public List<SeederEntityInfo> Entities { get; set; }
     
 }
