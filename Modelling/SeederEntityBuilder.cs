@@ -65,7 +65,7 @@ public class SeederEntityBuilder<TEntity>
     
     private SeederPropertyInfo getPropertyInfo<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
     {
-        throw new NotImplementedException(0);
+        throw new NotImplementedException();
 
     }
 
