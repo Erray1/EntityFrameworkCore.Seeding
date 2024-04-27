@@ -12,6 +12,7 @@ public sealed class SeederEntityInfo
     public bool LoadsData { get; set; } = false;
     public SeederStockDataCollection? LoadedValues { get; set; }
     public bool StrictMatchingForLoadedData { get; set; }
+    public bool IsPrincipal {  get; set; }
     public Dictionary<SeederEntityInfo, EntityRelationType> LinkedEntities { get; set; }
     public Dictionary<SeederEntityInfo, int> NullableLinkedEntitiesProbabilities { get; set; }
     public List<object>? PossibleValues { get; set; }

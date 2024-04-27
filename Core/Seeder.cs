@@ -12,30 +12,29 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
     where TDbContext : DbContext
     where TSeederModel : SeederModel<TDbContext>
 {
-    private readonly SeederModelProvider _modelProvider;
-    private readonly SeederOptionsProvider _optionsProvider;
-    private readonly DbContextFactory<TDbContext> _dbContextFactory;
-    private TDbContext _dbContext;
-    private IModel _dbModel => _dbContext.Model;
     private readonly SeederModelInfo _seederModel;
     private readonly SeederOptions _seederOptions;
 
     private readonly IServiceProvider _serviceProvider;
+
+    private readonly SeederEntityCreator _entitiesCreator;
     private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities;
 
+    private readonly SeederEntityBinder _entityBinder;
+    private readonly SeederEntityAdder<TDbContext> _entityAdder;
 
     public Seeder(
         IKeyedServiceProvider keyedServiceProvider,
-        DbContextFactory<TDbContext> dbContextFactory,
         IServiceProvider serviceProvider,
-        TDbContext dbContext)
+        SeederEntityCreator entityCreator,
+        SeederEntityBinder entityBinder,
+        SeederEntityAdder<TDbContext> entityAdder)
     {
-        _modelProvider = keyedServiceProvider.GetRequiredKeyedService<SeederModelProvider>(typeof(TSeederModel).Name);
-        _seederModel = _modelProvider.GetModel();
-        _dbContextFactory = dbContextFactory; // CHECK
         _seederOptions = keyedServiceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TSeederModel).Name).GetOptions();
         _serviceProvider = serviceProvider;
-        _dbContext = dbContext;
+        _entitiesCreator = entityCreator;
+        _entityBinder = entityBinder;
+        _entityAdder = entityAdder;
     }
 
     public async ValueTask DisposeAsync()
@@ -50,14 +49,10 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
         cancellationToken.Register(async () => await DisposeAsync());
         while (!cancellationToken.IsCancellationRequested)
         {
-            _createdEntities = SeederEntityCreator.CreateNew(_seederModel).CreateEntities()!;
-            SeederEntityBinder.CreateBinder(_dbModel, _createdEntities).BindEntities();
-            await AddEntititesToDatabase();
+            _createdEntities = _entitiesCreator.CreateEntities()!;
+            _entityBinder.BindEntities(_createdEntities);
+            await _entityAdder.AddEntities(_createdEntities);
         }
     }
 
-    private async Task AddEntititesToDatabase()
-    {
-        await _dbContext.SaveChangesAsync();
-    }
 }
