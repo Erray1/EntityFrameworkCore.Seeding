@@ -5,8 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Seeding.Core;
-    public class DataCreationTypeAttribute : Attribute
+    public enum SeederDataCreationType
     {
-    public DataCreationType CreationType { get; init; }
+    FromJSON,
+    FromGivenPool,
+    Random,
+    Loaded
     }
 

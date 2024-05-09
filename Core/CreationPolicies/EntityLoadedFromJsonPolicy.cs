@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Seeding.Core.CreationPolicies;
-public class EntityLoadedFromJsonPolicy : ISeederEntityCreationPolicy
+public class EntityLoadedFromJsonPolicy : SeederEntityCreationPolicy
 {
-    public IEnumerable<object> CreateEntities(SeederEntityInfo entity)
+    protected override void createPropertiesPool()
     {
         throw new NotImplementedException();
     }

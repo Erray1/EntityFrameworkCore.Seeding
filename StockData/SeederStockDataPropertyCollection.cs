@@ -5,8 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Seeding.StockData;
+    public class SeederStockDataPropertyCollection
+    {
+    }
 
-internal sealed class SeederStockDataLoader
-{
-    public List<StockDataRequest> StockDataRequests = new();
-}

@@ -8,5 +8,5 @@ namespace EntityFrameworkCore.Seeding.Modelling.Utilities;
 
 public interface ISeederBuilder
 {
-    public SeederInfoBase Build();
+    public SeederModelInfo Build();
 }

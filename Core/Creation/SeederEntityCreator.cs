@@ -1,34 +1,25 @@
 ﻿using EntityFrameworkCore.Seeding.Core.CreationPolicies;
 using EntityFrameworkCore.Seeding.DI;
 using EntityFrameworkCore.Seeding.Modelling;
-using Microsoft.EntityFrameworkCore.Metadata;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace EntityFrameworkCore.Seeding.Core;
+namespace EntityFrameworkCore.Seeding.Core.Creation;
 public sealed class SeederEntityCreator
 {
     private readonly SeederModelInfo _seederModel;
     private List<SeederEntityInfo>.Enumerator _entitiesEnumerator;
 
-    private ISeederEntityCreationPolicy _currentPolicy;
-    private readonly SeederEntityCreaationPolicyFactory _policyFactory;
+    private readonly EntityCreationChainLinker _linker;
 
     private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities = new();
     public SeederEntityCreator(
-        SeederModelProvider seederModelProvider,
-        SeederEntityCreaationPolicyFactory policyFactory
-        ) 
+        IServiceProvider serviceProvider,
+        EntityCreationChainLinker linker
+        )
     {
         _seederModel = seederModelProvider.GetModel();
         _entitiesEnumerator = _seederModel.Entities.GetEnumerator();
-        _policyFactory = policyFactory;
-        _currentPolicy = _policyFactory.CreatePolicyFor(_seederModel.Entities.First());
+        _linker = linker;
+
     }
     public Dictionary<SeederEntityInfo, IEnumerable<object>> CreateEntities()
     {
@@ -39,12 +30,21 @@ public sealed class SeederEntityCreator
     private void createEntitiesInternal()
     {
         var current = _entitiesEnumerator.Current;
-        var entities = _currentPolicy.CreateEntities(current);
+        var chain = _linker.CreateChainFor(current);
+        var entities = createEmptyEntities(current);
+        chain.FillEntities(entities);
+
         _createdEntities.Add(current, entities);
+
         var isEnd = !_entitiesEnumerator.MoveNext();
         if (isEnd) return;
-        _currentPolicy = _policyFactory.CreatePolicyFor(_entitiesEnumerator.Current);
         createEntitiesInternal();
+    }
+    private IEnumerable<object> createEmptyEntities(SeederEntityInfo entityInfo)
+    {
+        return Enumerable.Range(0, entityInfo.TimesCreated + entityInfo.Locality)
+            .Select(x => Activator.CreateInstance(entityInfo.EntityType)!);
+
     }
 }
 

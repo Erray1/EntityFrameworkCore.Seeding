@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EntityFrameworkCore.Seeding.Core;
-    public class SeederDbPopulator
+namespace EntityFrameworkCore.Seeding.StockData;
+    public class SeederStockDataEntityCollection
     {
-        public 
     }
 

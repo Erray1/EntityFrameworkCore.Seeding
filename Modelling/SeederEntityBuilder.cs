@@ -1,33 +1,37 @@
 ﻿using EntityFrameworkCore.Seeding.StockData;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using System.Linq.Expressions;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
-public class SeederEntityBuilder<TEntity>
+public sealed class SeederEntityBuilder<TEntity>
     where TEntity : class
 {
-    public SeederEntityInfo Entity { get; set; }
+    private readonly SeederEntityInfo _entity;
     public SeederEntityBuilder(SeederEntityInfo info)
     {
-        Entity = info;
+        _entity = info;
     }
-    public SeederEntityBuilder<TEntity> HasValues(List<TEntity> values) 
+    public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values) 
     {
-        Entity.PossibleValues = values.Cast<object>().ToList(); // А нормально ли это???
+        _entity.PossibleValues = values.Cast<object>().ToList(); // А нормально ли это???
+        foreach (var prop in _entity.Properties) { prop.IsConfigured = true; }
         return this;
     }
 
-    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values, bool strictPropertyMatching = true)
+    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values, bool strictPropertyNameMatching = true)
     {
-        Entity.LoadsData = true;
-        Entity.LoadedValues = values;
-        Entity.StrictMatchingForLoadedData = strictPropertyMatching;
+        _entity.LoadsData = true;
+        _entity.LoadedValues = values;
+        _entity.StrictMatchingForLoadedData = strictPropertyNameMatching;
+        values.MarkEveryPropertyMappedToCollectionAsConfigured(_entity.Properties, strictPropertyNameMatching);
+
         return this;
     }
 
-    public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(int probability)
+    public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(double probability)
     {
-        var relatedEntityInfo = Entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
-        Entity.NullableLinkedEntitiesProbabilities[relatedEntityInfo] = probability;
+        var relatedEntityInfo = _entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
+        _entity.NullableLinkedEntitiesProbabilities[relatedEntityInfo] = probability;
         return this;
     }
 
@@ -40,38 +44,36 @@ public class SeederEntityBuilder<TEntity>
             property.AreValuesRandom = true;
             property.IsConfigured = true;
         }
-        Entity.IsConfigured = true;
+        _entity.IsConfigured = true;
     }
 
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated)
     {
-        Entity.TimesCreated = timesCreated;
+        _entity.TimesCreated = timesCreated;
         return this;
     }
 
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated, int locality)
     {
-        Entity.TimesCreated = timesCreated;
-        Entity.Locality = locality;
+        _entity.TimesCreated = timesCreated;
+        _entity.Locality = locality;
         return this;
     }
 
-    public SeederPropertyBuilder<TProperty> Property<TProperty>(Expression<Func<TEntity, TProperty>> keyExpression)
+    public SeederPropertyBuilder<TProperty> Property<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
     {
-        var propertyInfo = getPropertyInfo(keyExpression);
+        var property = propertyExpression.GetPropertyAccess();
+        var propertyInfo = _entity.Properties
+            .Single(x => x.PropertyName == property.Name &&
+                    x.PropertyType == property.PropertyType);
         
         return new SeederPropertyBuilder<TProperty>(propertyInfo);
     }
     
-    private SeederPropertyInfo getPropertyInfo<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
-    {
-        throw new NotImplementedException();
-
-    }
 
     private List<SeederPropertyInfo> getNotConfiguredProperties()
     {
-        return Entity.Properties.Where(x => !x.IsConfigured).ToList();
+        return _entity.Properties.Where(x => !x.IsConfigured).ToList();
     }
 }
 

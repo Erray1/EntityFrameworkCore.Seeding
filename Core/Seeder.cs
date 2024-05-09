@@ -1,4 +1,6 @@
-﻿using EntityFrameworkCore.Seeding.DI;
+﻿using EntityFrameworkCore.Seeding.Core.Binding;
+using EntityFrameworkCore.Seeding.Core.Creation;
+using EntityFrameworkCore.Seeding.DI;
 using EntityFrameworkCore.Seeding.Modelling;
 using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,7 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
     private readonly SeederOptions _seederOptions;
 
     private readonly IServiceProvider _serviceProvider;
+    private readonly TDbContext _dbContext;
 
     private readonly SeederEntityCreator _entitiesCreator;
     private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities;
@@ -24,17 +27,18 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
     private readonly SeederEntityAdder<TDbContext> _entityAdder;
 
     public Seeder(
-        IKeyedServiceProvider keyedServiceProvider,
         IServiceProvider serviceProvider,
         SeederEntityCreator entityCreator,
         SeederEntityBinder entityBinder,
-        SeederEntityAdder<TDbContext> entityAdder)
+        SeederEntityAdder<TDbContext> entityAdder,
+        TDbContext dbContext)
     {
-        _seederOptions = keyedServiceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TSeederModel).Name).GetOptions();
+        _seederOptions = serviceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TSeederModel).Name).GetOptions();
         _serviceProvider = serviceProvider;
         _entitiesCreator = entityCreator;
         _entityBinder = entityBinder;
         _entityAdder = entityAdder;
+        _dbContext = dbContext;
     }
 
     public async ValueTask DisposeAsync()
@@ -50,7 +54,7 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
         while (!cancellationToken.IsCancellationRequested)
         {
             _createdEntities = _entitiesCreator.CreateEntities()!;
-            _entityBinder.BindEntities(_createdEntities);
+            _entityBinder.BindEntities(_createdEntities, _dbContext.Model);
             await _entityAdder.AddEntities(_createdEntities);
         }
     }

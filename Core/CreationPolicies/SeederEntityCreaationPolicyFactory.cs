@@ -3,31 +3,25 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 
 namespace EntityFrameworkCore.Seeding.Core.CreationPolicies;
-public class SeederEntityCreaationPolicyFactory
+public class SeederEntityCreationPolicyFactory
 {
-    private static ReadOnlyDictionary<DataCreationType, Type> _policies = new(new Dictionary<DataCreationType, Type>()
+    private static ReadOnlyDictionary<SeederDataCreationType, Type> _policies = new(new Dictionary<SeederDataCreationType, Type>()
     {
-        {DataCreationType.FromJSON, typeof(object)},
-        {DataCreationType.FromGivenPool, typeof(object)},
-        {DataCreationType.Random, typeof(object)},
-        {DataCreationType.Loaded, typeof(object)},
+        {SeederDataCreationType.FromJSON, typeof(EntityLoadedFromJsonPolicy)},
+        {SeederDataCreationType.FromGivenPool, typeof(EntityCreatedFromGivenPoolPolicy)},
+        {SeederDataCreationType.Random, typeof(EntityCreatedRandomlyPolicy)},
+        {SeederDataCreationType.Loaded, typeof(EntityLoadedFromGitHubPolicy)}
     });
     private readonly IServiceProvider _serviceProvider;
-    public SeederEntityCreaationPolicyFactory(IServiceProvider serviceProvider)
+    public SeederEntityCreationPolicyFactory(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
-    public ISeederEntityCreationPolicy CreatePolicyFor(SeederEntityInfo entity)
+    public SeederEntityCreationPolicy CreatePolicyFor(SeederDataCreationType dataCreationType)
     {
-        var creationType = getCreationTypeFor(entity);
-        var policyType = _policies[creationType];
-        return (ISeederEntityCreationPolicy)_serviceProvider.GetRequiredService(policyType);
-    }
-
-    private DataCreationType getCreationTypeFor(SeederEntityInfo entity)
-    {
-        throw new NotImplementedException();
+        var policyType = _policies[dataCreationType];
+        return (SeederEntityCreationPolicy)_serviceProvider.GetRequiredService(policyType);
     }
 }
 

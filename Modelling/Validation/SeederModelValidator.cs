@@ -5,10 +5,12 @@ namespace EntityFrameworkCore.Seeding.Modelling.Validation;
 
 public static class SeederModelValidator
 {
-    public static void ValidateAndThrowException(SeederModelInfo model)
+    public static void ThrowExceptionIfInvalid(SeederModelInfo model)
     {
-        bool allEntitiesAreConfigured = !model.Entities.Any(x => x.IsConfigured);
-        if (!allEntitiesAreConfigured) return;
+        bool allEntitiesAreConfigured = model.Entities
+            .All(x => x.Properties.All(prop => prop.IsConfigured));
+
+        if (allEntitiesAreConfigured) return;
 
         var notConfiguredEntities = model.Entities
             .Where(e => !e.IsConfigured)
@@ -19,19 +21,20 @@ public static class SeederModelValidator
             })
             .ToList();
 
-        throw new SeederModelValidationException(GetNotConfiguredEntitiesSummary(notConfiguredEntities));
+        throw new SeederModelValidationException(getNotConfiguredEntitiesSummary(notConfiguredEntities));
     }
 
-    private static string GetNotConfiguredEntitiesSummary(List<NotConfiguredEntityProps> entities)
+    private static string getNotConfiguredEntitiesSummary(List<NotConfiguredEntityProps> entities)
     {
         var builder = new StringBuilder();
         foreach (var entity in entities)
         {
             builder.AppendFormat("{0}: ", entity.EntityType.Name);
-            builder.Append(entity.Properties.Select(x => x.PropertyType).ToArray());
+            builder.Append(entity.Properties.Select(x => x.PropertyName).ToArray());
             builder.AppendLine();
         }
-        return builder.ToString();
+        var result = builder.ToString();
+        return result;
     }
 
     class SeederModelValidationException : Exception

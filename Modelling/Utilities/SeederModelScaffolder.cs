@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using EntityFrameworkCore.Seeding.Core;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Reflection;
 
@@ -30,7 +31,7 @@ public static class SeederModelScaffolder
             .Select(x => new SeederEntityInfo(x.EntityType)
             {
                 Properties = x.Properties
-                .Select(p => new SeederPropertyInfo(p.PropertyType))
+                .Select(p => new SeederPropertyInfo(p.PropertyType) { PropertyName = p.Name})
                 .ToList(),
             })
             .ToList();
@@ -82,10 +83,12 @@ public static class SeederModelScaffolder
 
     private static List<PropertyInfo> getProperties(Type entityType)
     {
-        return entityType
-            .GetProperties(BindingFlags.Public)
+        var properties = entityType
+            .GetRuntimeProperties()
             .ToList();
+        return properties;
     }
+
     class DbContextEntityInfo
     {
         public Type EntityType { get; init; }

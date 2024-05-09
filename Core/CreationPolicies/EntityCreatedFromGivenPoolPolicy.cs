@@ -1,16 +1,19 @@
 ﻿using EntityFrameworkCore.Seeding.Modelling;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Seeding.Core.CreationPolicies;
-public class EntityCreatedFromGivenPoolPolicy : ISeederEntityCreationPolicy
+public class EntityCreatedFromGivenPoolPolicy : SeederEntityCreationPolicy
 {
-    public IEnumerable<object> CreateEntities(SeederEntityInfo entity)
+    protected override void createPropertiesPool()
     {
-        throw new NotImplementedException();
+        _propertyPool = _propertiesFilledWithPolicy
+            .Select(x => new KeyValuePair<SeederPropertyInfo, IEnumerable<object>>(x, x.PossibleValuesPool!))
+            .ToImmutableDictionary();
     }
 }
 
