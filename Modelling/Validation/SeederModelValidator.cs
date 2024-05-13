@@ -13,10 +13,10 @@ public static class SeederModelValidator
         if (allEntitiesAreConfigured) return;
 
         var notConfiguredEntities = model.Entities
-            .Where(e => !e.IsConfigured)
+            .Where(e => !e.Properties.All(x => x.IsConfigured))
             .Select(e => new NotConfiguredEntityProps
             {
-                Properties = e.Properties,
+                Properties = e.Properties.Where(x => !x.IsConfigured).ToList(),
                 EntityType = e.EntityType
             })
             .ToList();
@@ -30,7 +30,7 @@ public static class SeederModelValidator
         foreach (var entity in entities)
         {
             builder.AppendFormat("{0}: ", entity.EntityType.Name);
-            builder.Append(entity.Properties.Select(x => x.PropertyName).ToArray());
+            builder.Append(String.Join(", ", entity.Properties.Select(x => x.PropertyName).ToArray()));
             builder.AppendLine();
         }
         var result = builder.ToString();

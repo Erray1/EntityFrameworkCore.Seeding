@@ -20,9 +20,9 @@ public class SeederInitializingService<TDbContext, TSeeder> : IHostedService, IS
     private readonly SeederModelProvider _modelProvider;
     public SeederInitializingService(IKeyedServiceProvider keyedServiceProvider)
     {
-        var seederType = typeof(TSeeder);
-        _optionsProvider = keyedServiceProvider.GetRequiredKeyedService<SeederOptionsProvider>(seederType.Name);
-        _modelProvider = keyedServiceProvider.GetRequiredKeyedService<SeederModelProvider>(seederType.Name);
+        var dbContextType = typeof(TDbContext);
+        _optionsProvider = keyedServiceProvider.GetRequiredKeyedService<SeederOptionsProvider>(dbContextType.Name);
+        _modelProvider = keyedServiceProvider.GetRequiredKeyedService<SeederModelProvider>(dbContextType.Name);
     }
     public async Task ExecuteSeeding()
     {

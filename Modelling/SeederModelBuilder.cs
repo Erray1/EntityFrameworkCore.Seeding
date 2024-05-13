@@ -23,7 +23,19 @@ public sealed class SeederModelBuilder : ISeederBuilder, ISeederModelBuilder
     }
     public void RandomizeEveryEntity()
     {
-
+        foreach (var entity in _model.Entities)
+        {
+            entity.TimesCreated = Random.Shared.Next(0, 30);
+            foreach (var entityLink in entity.NullableLinkedEntitiesProbabilities)
+            {
+                entity.NullableLinkedEntitiesProbabilities[entityLink.Key] = Random.Shared.NextDouble();
+            }
+            foreach (var property in entity.Properties)
+            {
+                property.AreValuesRandom = true;
+                property.IsConfigured = true;
+            }
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-﻿using EntityFrameworkCore.Seeding.Core.CreationPolicies;
+﻿using EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies;
 using EntityFrameworkCore.Seeding.Modelling;
 
 using System.Collections.Immutable;
@@ -9,7 +9,7 @@ public class EntityCreationChainLinker
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly SeederEntityCreationPolicyFactory _policyFactory;
-    private SeederEntityCreationPolicy _first;
+    private SeederPropertiesCreationPolicy _first;
     public EntityCreationChainLinker(
         IServiceProvider serviceProvider,
         SeederEntityCreationPolicyFactory factory)
@@ -21,25 +21,38 @@ public class EntityCreationChainLinker
     // Если загружаются только отдельные props, то создать несколько независимых этапов для каждой
     // Если загружается целая сущность, то создать неделимый этап (который надо реализовать быбыб)
 
-    public SeederEntityCreationPolicy CreateChainFor(SeederEntityInfo entity)
+    public SeederPropertiesCreationPolicy CreateChainFor(SeederEntityInfo entity)
     {
         var options = new SeederEntityCreationPolicyOptions();
         var propsGroupedByCreationType = groupPropertiesByCreationType(entity);
-        SeederEntityCreationPolicy? current = _policyFactory.CreatePolicyFor(propsGroupedByCreationType.ElementAt(0).Key);
+        SeederPropertiesCreationPolicy? current = _policyFactory.CreatePolicyFor(propsGroupedByCreationType.ElementAt(0).Key);
+
+        var enumerator = propsGroupedByCreationType.GetEnumerator();
+
+        _first = current;
 
         for (int i = 1; i < propsGroupedByCreationType.Count; i++)
         {
-            var (creationType, props) = propsGroupedByCreationType.ElementAt(i);
-
-            var next = _policyFactory.CreatePolicyFor(creationType);
+            var currentProps = propsGroupedByCreationType.ElementAt(i - 1).Value;
+            
+            var nextCreationType = propsGroupedByCreationType.ElementAt(i).Key;
+            var next = _policyFactory.CreatePolicyFor(nextCreationType);
 
             options.Next = next;
-            options.PropertisCreated = props;
+            options.PropertiesCreated = currentProps;
             options.EntityInfo = entity;
 
             current.SetOptions(options);
 
             current = next;
+            if (i == propsGroupedByCreationType.Count - 1)
+            {
+                currentProps = propsGroupedByCreationType.ElementAt(i).Value;
+                options.Next = null;
+                options.PropertiesCreated = currentProps;
+                options.EntityInfo = entity;
+                current.SetOptions(options);
+            }
         }
 
         return _first;
@@ -53,10 +66,13 @@ public class EntityCreationChainLinker
 
         var loadedProps = entity.Properties
             .Where(x => x.PossibleLoadedValues is not null)
-            .GroupBy (x => x.PossibleLoadedValues)
+            .GroupBy(x => x.PossibleLoadedValues)
             .ToImmutableDictionary(g => SeederDataCreationType.Loaded, g => g.ToImmutableList());
 
-        return nonLoadedProps.Concat(loadedProps).ToImmutableDictionary();
+        return nonLoadedProps
+            .Concat(loadedProps)
+            .Where(x => x.Key != SeederDataCreationType.DoNotCreate)
+            .ToImmutableDictionary();
     }
 }
 

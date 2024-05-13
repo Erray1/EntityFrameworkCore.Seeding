@@ -19,9 +19,8 @@ public class SeederInitialStarter<TSeederModel, TDbContext> : BackgroundService
         {
             var seeder = (Seeder<TSeederModel, TDbContext>)scope.ServiceProvider.GetRequiredKeyedService(typeof(Seeder<TSeederModel, TDbContext>), typeof(TDbContext).Name);
             await seeder.ExecuteSeedingAsync(stoppingToken);
-            await StopAsync(stoppingToken);
         }
-        
+        await StopAsync(stoppingToken);
     }
 }
 

@@ -31,8 +31,8 @@ public static class SeederModelScaffolder
             .Select(x => new SeederEntityInfo(x.EntityType)
             {
                 Properties = x.Properties
-                .Select(p => new SeederPropertyInfo(p.PropertyType) { PropertyName = p.Name})
-                .ToList(),
+                .Select(p => new SeederPropertyInfo(p.PropertyType, p.Name))
+                .ToList()
             })
             .ToList();
 
@@ -44,7 +44,7 @@ public static class SeederModelScaffolder
         where TDbContext : DbContext
     {
         var allEntityTypes = entities.Select(x => x.EntityType);
-        var linkedEntitiesAndRelationTypes = new Dictionary<SeederEntityInfo, EntityRelationType>();
+        var linkedEntitiesAndRelationTypes = new Dictionary<SeederEntityInfo, SeederEntityRelationInfo>();
         foreach (var entity in entities)
         {
             var linkedEntities_ = entity.EntityType.GetProperties()
@@ -58,27 +58,51 @@ public static class SeederModelScaffolder
 
             linkedEntities.ForEach(x => linkedEntitiesAndRelationTypes.Add(x, getEntityRelation(entity, x)));
             entity.LinkedEntities = new(linkedEntitiesAndRelationTypes);
+            removeRelationalProperties(entity);
             linkedEntitiesAndRelationTypes.Clear();
         }
     }
+    private static void removeRelationalProperties(SeederEntityInfo entity)
+    {
+        var navigationPropsNames = entity.LinkedEntities
+                .Select(x => x.Value.Property.Name);
+        var propsToRemove = entity.Properties
+            .Where(x => navigationPropsNames.Contains(x.PropertyName))
+            .ToList();
+        foreach (var property in propsToRemove)
+        {
+            entity.Properties.Remove(property);
+        }
 
-    private static EntityRelationType getEntityRelation(SeederEntityInfo fromEntity, SeederEntityInfo toEntity)
+    }
+    private static SeederEntityRelationInfo getEntityRelation(SeederEntityInfo fromEntity, SeederEntityInfo toEntity)
     {
         Type toEntityType = toEntity.EntityType;
-        var linkProperty = fromEntity.EntityType.GetProperties()
+
+        // Compute link property
+
+        PropertyInfo linkProperty = fromEntity.EntityType.GetProperties()
             .Single(x => x.PropertyType == toEntityType ||
             x.PropertyType.IsGenericType && x.PropertyType.GetGenericArguments()[0] == toEntityType);
+        bool isNavigationProperty = linkProperty.PropertyType.IsInstanceOfType(toEntity.EntityType);
+
+        // Compute entity relation type
+
+        EntityRelationType relationType;
+
         if (linkProperty.PropertyType.IsGenericType)
         {
-            return EntityRelationType.OneToMany;
+            relationType = EntityRelationType.OneToMany;
         }
+
         var isPropertyNullable = new NullabilityInfoContext().Create(linkProperty).WriteState is NullabilityState.Nullable;
         if (isPropertyNullable)
         {
             fromEntity.NullableLinkedEntitiesProbabilities.Add(toEntity, 1);
-            return EntityRelationType.OneToOneNullable;
+            relationType = EntityRelationType.OneToOneNullable;
         }
-        return EntityRelationType.OneToOne;
+        relationType = EntityRelationType.OneToOne;
+        return new SeederEntityRelationInfo(linkProperty, relationType, isNavigationProperty);
     }
 
     private static List<PropertyInfo> getProperties(Type entityType)

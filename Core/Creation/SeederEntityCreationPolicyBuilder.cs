@@ -1,10 +1,10 @@
-﻿using EntityFrameworkCore.Seeding.Core.CreationPolicies;
+﻿using EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies;
 using EntityFrameworkCore.Seeding.Modelling;
 
 namespace EntityFrameworkCore.Seeding.Core.Creation;
 public class SeederEntityCreationPolicyBuilder // singleton of scope
 {
-    private SeederEntityCreationPolicy? _currentPolicy;
+    private SeederPropertiesCreationPolicy? _currentPolicy;
     private readonly SeederEntityCreationPolicyFactory _policyFactory;
     private SeederEntityCreationPolicyOptions _currentOptions = new();
 
@@ -20,7 +20,7 @@ public class SeederEntityCreationPolicyBuilder // singleton of scope
         return this;
     }
 
-    public SeederEntityCreationPolicyBuilder WithNext(SeederEntityCreationPolicy next)
+    public SeederEntityCreationPolicyBuilder WithNext(SeederPropertiesCreationPolicy next)
     {
         _currentOptions.Next = next;
         return this;
@@ -28,10 +28,10 @@ public class SeederEntityCreationPolicyBuilder // singleton of scope
     public SeederEntityCreationPolicyBuilder WithProperties(IEnumerable<SeederPropertyInfo> props, SeederDataCreationType dataCreationType)
     {
         _currentPolicy = _policyFactory.CreatePolicyFor(dataCreationType);
-        _currentOptions.PropertisCreated = props;
+        _currentOptions.PropertiesCreated = props;
         return this;
     }
-    public SeederEntityCreationPolicy Build() {
+    public SeederPropertiesCreationPolicy Build() {
         _currentPolicy!.SetOptions( _currentOptions );
         var policy = _currentPolicy;
         _currentPolicy = null;

@@ -1,25 +1,28 @@
-﻿using EntityFrameworkCore.Seeding.Core.CreationPolicies;
+﻿
 using EntityFrameworkCore.Seeding.DI;
 using EntityFrameworkCore.Seeding.Modelling;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace EntityFrameworkCore.Seeding.Core.Creation;
-public sealed class SeederEntityCreator
+public sealed class SeederEntityCreator<TDbContext>
+    where TDbContext : DbContext
 {
+    private readonly IServiceScopeFactory _scopeFactory;
+
     private readonly SeederModelInfo _seederModel;
     private List<SeederEntityInfo>.Enumerator _entitiesEnumerator;
-
-    private readonly EntityCreationChainLinker _linker;
 
     private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities = new();
     public SeederEntityCreator(
         IServiceProvider serviceProvider,
-        EntityCreationChainLinker linker
+        IServiceScopeFactory serviceScopeFactory
         )
     {
-        _seederModel = seederModelProvider.GetModel();
+        _seederModel = serviceProvider.GetRequiredKeyedService<SeederModelProvider>(typeof(TDbContext).Name).GetModel();
         _entitiesEnumerator = _seederModel.Entities.GetEnumerator();
-        _linker = linker;
-
+        _entitiesEnumerator.MoveNext();
+        _scopeFactory = serviceScopeFactory;
     }
     public Dictionary<SeederEntityInfo, IEnumerable<object>> CreateEntities()
     {
@@ -29,22 +32,26 @@ public sealed class SeederEntityCreator
 
     private void createEntitiesInternal()
     {
-        var current = _entitiesEnumerator.Current;
-        var chain = _linker.CreateChainFor(current);
-        var entities = createEmptyEntities(current);
-        chain.FillEntities(entities);
+        using (var scope = _scopeFactory.CreateScope())
+        {
+            var linker = scope.ServiceProvider.GetRequiredService<EntityCreationChainLinker>();
 
-        _createdEntities.Add(current, entities);
-
+            var current = _entitiesEnumerator.Current;
+            var chain = linker.CreateChainFor(current);
+            var entities = createEmptyEntities(current);
+            chain.FillEntities(entities);
+            _createdEntities.Add(current, entities);
+        }
+        
         var isEnd = !_entitiesEnumerator.MoveNext();
         if (isEnd) return;
         createEntitiesInternal();
     }
-    private IEnumerable<object> createEmptyEntities(SeederEntityInfo entityInfo)
+    private List<object> createEmptyEntities(SeederEntityInfo entityInfo)
     {
-        return Enumerable.Range(0, entityInfo.TimesCreated + entityInfo.Locality)
-            .Select(x => Activator.CreateInstance(entityInfo.EntityType)!);
-
+        return Enumerable.Range(0, entityInfo.TimesCreated)
+            .Select(x => Activator.CreateInstance(entityInfo.EntityType)!)
+            .ToList();
     }
 }
 

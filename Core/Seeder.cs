@@ -10,17 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EntityFrameworkCore.Seeding.Core;
 
-public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
+public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposable
     where TDbContext : DbContext
     where TSeederModel : SeederModel<TDbContext>
 {
-    private readonly SeederModelInfo _seederModel;
     private readonly SeederOptions _seederOptions;
 
     private readonly IServiceProvider _serviceProvider;
     private readonly TDbContext _dbContext;
 
-    private readonly SeederEntityCreator _entitiesCreator;
+    private readonly SeederEntityCreator<TDbContext> _entitiesCreator;
     private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities;
 
     private readonly SeederEntityBinder _entityBinder;
@@ -28,14 +27,13 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
 
     public Seeder(
         IServiceProvider serviceProvider,
-        SeederEntityCreator entityCreator,
         SeederEntityBinder entityBinder,
         SeederEntityAdder<TDbContext> entityAdder,
         TDbContext dbContext)
     {
-        _seederOptions = serviceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TSeederModel).Name).GetOptions();
+        _seederOptions = serviceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TDbContext).Name).GetOptions();
         _serviceProvider = serviceProvider;
-        _entitiesCreator = entityCreator;
+        _entitiesCreator = serviceProvider.GetRequiredService<SeederEntityCreator<TDbContext>>();
         _entityBinder = entityBinder;
         _entityAdder = entityAdder;
         _dbContext = dbContext;
@@ -50,7 +48,7 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder, IAsyncDisposable
 
     public async Task ExecuteSeedingAsync(CancellationToken cancellationToken)
     {
-        cancellationToken.Register(async () => await DisposeAsync());
+        // cancellationToken.Register(async () => await DisposeAsync());
         while (!cancellationToken.IsCancellationRequested)
         {
             _createdEntities = _entitiesCreator.CreateEntities()!;

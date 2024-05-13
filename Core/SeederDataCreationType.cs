@@ -10,6 +10,8 @@ namespace EntityFrameworkCore.Seeding.Core;
     FromJSON,
     FromGivenPool,
     Random,
-    Loaded
+    Loaded,
+    CreatedID,
+    DoNotCreate
     }
 

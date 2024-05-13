@@ -5,8 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EntityFrameworkCore.Seeding.Core.CreationPolicies;
-public class EntityLoadedFromGitHubPolicy : SeederEntityCreationPolicy
+namespace EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies;
+public class PropertiesLoadedFromGitHubPolicy : SeederPropertiesCreationPolicy
 {
     public IEnumerable<object> CreateEntities(SeederEntityInfo entity)
     {

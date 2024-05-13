@@ -8,12 +8,11 @@ public sealed class SeederEntityInfo
     public bool IsConfigured;
     public Type EntityType { get; init; }
     public int TimesCreated { get; set; }
-    public int Locality { get; set; } = 0;
     public bool LoadsData { get; set; } = false;
     public SeederStockDataCollection? LoadedValues { get; set; }
     public bool StrictMatchingForLoadedData { get; set; }
     public bool IsPrincipal {  get; set; }
-    public Dictionary<SeederEntityInfo, EntityRelationType> LinkedEntities { get; set; } = new();
+    public Dictionary<SeederEntityInfo, SeederEntityRelationInfo> LinkedEntities { get; set; } = new();
     public Dictionary<SeederEntityInfo, double> NullableLinkedEntitiesProbabilities { get; set; } = new();
     public List<object>? PossibleValues { get; set; }
     public List<SeederPropertyInfo> Properties { get; set; } = new();
@@ -22,6 +21,7 @@ public sealed class SeederEntityInfo
         EntityType = entityType;
         IsConfigured = false;
     }
+    public bool ShuffleValues { get;set; } = false;
     public override int GetHashCode()
     {
         return EntityType.GetHashCode();

@@ -8,10 +8,11 @@ namespace EntityFrameworkCore.Seeding.Core.Creation;
 public static class RandomValuesGenerator
 {
     const int strLength = 8;
-    public static IEnumerable<object> GetRandomValuesOfType(Type type, int length)
+    public static List<object> GetRandomValuesOfType(Type type, int length)
     {
         return Enumerable.Range(0, length)
-            .Select(x => GetRandomValueOfType(type));
+            .Select(x => GetRandomValueOfType(type))
+            .ToList();
     }
     public static object GetRandomValueOfType(Type type)
     {
@@ -39,10 +40,18 @@ public static class RandomValuesGenerator
         {
             return Random.Shared.NextDouble();
         }
+        if (type == typeof(bool))
+        {
+            return Random.Shared.Next() % 2 == 0;
+        }
         if (type.IsEnum)
         {
             var values = type.GetEnumValues();
             return values.GetValue(Random.Shared.Next(0, values.Length))!;    
+        }
+        if (type == typeof(Guid))
+        {
+            return Guid.NewGuid();
         }
         throw new ArgumentException($"Type {type} cannot be handled");
     }

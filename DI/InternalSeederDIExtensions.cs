@@ -1,7 +1,7 @@
 ﻿using EntityFrameworkCore.Seeding.Core;
 using EntityFrameworkCore.Seeding.Core.Binding;
 using EntityFrameworkCore.Seeding.Core.Creation;
-using EntityFrameworkCore.Seeding.Core.CreationPolicies;
+using EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies;
 using EntityFrameworkCore.Seeding.Modelling;
 using EntityFrameworkCore.Seeding.Modelling.Utilities;
 using EntityFrameworkCore.Seeding.Modelling.Validation;
@@ -26,7 +26,7 @@ public static partial class InternalSeederDIExtensions
 
         options = builder.Build();
 
-        services.AddKeyedSingleton(new SeederOptionsProvider(options), typeof(TDbContext).Name);
+        services.AddKeyedSingleton(typeof(TDbContext).Name, new SeederOptionsProvider(options));
 
         return services;
     }
@@ -46,7 +46,7 @@ public static partial class InternalSeederDIExtensions
 
         SeederModelValidator.ThrowExceptionIfInvalid(model);
 
-        services.AddKeyedSingleton(new SeederModelProvider(model), typeof(TDbContext).Name);
+        services.AddKeyedSingleton(typeof(TDbContext).Name, new SeederModelProvider(model));
 
         return services;
     }
@@ -82,14 +82,14 @@ public static partial class InternalSeederDIExtensions
 
         // Creation
 
-        services.AddScoped<SeederEntityCreator>();
+        services.AddScoped<SeederEntityCreator<TDbContext>>();
         services.AddScoped<EntityCreationChainLinker>();
         services.AddScoped<SeederEntityCreationPolicyFactory>();
 
-        var policies = typeof(SeederEntityCreationPolicy).Assembly.GetTypes()
+        var policies = typeof(SeederPropertiesCreationPolicy).Assembly.GetTypes()
             .Where(t => !t.IsAbstract
             && !t.IsInterface
-            && t.IsSubclassOf(typeof(SeederEntityCreationPolicy)));
+            && t.IsSubclassOf(typeof(SeederPropertiesCreationPolicy)));
         foreach (var policy in policies) services.AddScoped(policy);
 
         return services;

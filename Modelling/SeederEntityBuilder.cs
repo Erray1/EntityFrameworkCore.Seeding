@@ -11,14 +11,38 @@ public sealed class SeederEntityBuilder<TEntity>
     {
         _entity = info;
     }
-    public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values) 
+    public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values, bool mixValues = false,
+        params string[] exceptPropertiesNames) 
     {
-        _entity.PossibleValues = values.Cast<object>().ToList(); // А нормально ли это???
-        foreach (var prop in _entity.Properties) { prop.IsConfigured = true; }
+        var properties = typeof(TEntity).GetProperties();
+        var props = properties
+            .Where(prop => values
+                .Select(x => prop.GetValue(x))
+                .Any(x => x is not null) // check
+                && !exceptPropertiesNames.Contains(prop.Name))
+            .Select(x => new PropertyInfoAndPool
+            {
+                PropertyInfo = _entity.Properties
+                .First(prop => prop.PropertyName == x.Name
+                                && prop.PropertyType == x.PropertyType),
+                Pool = values.Select(val => x.GetValue(val)).ToList()!
+            })
+            .ToList();
+
+        foreach (var prop in props) {
+            prop.PropertyInfo.IsConfigured = true;
+            prop.PropertyInfo.ShuffleValues = mixValues;
+            prop.PropertyInfo.DataCreationType = Core.SeederDataCreationType.FromGivenPool;
+        }
         return this;
     }
+    class PropertyInfoAndPool
+    {
+        public SeederPropertyInfo PropertyInfo { get; set; }
+        public List<object> Pool { get; set; }
+    }
 
-    public SeederEntityBuilder<TEntity> HasValues<Tin>(SeederStockDataCollection values, bool strictPropertyNameMatching = true)
+    public SeederEntityBuilder<TEntity> HasValues(SeederStockDataCollection values, bool strictPropertyNameMatching = true)
     {
         _entity.LoadsData = true;
         _entity.LoadedValues = values;
@@ -55,8 +79,7 @@ public sealed class SeederEntityBuilder<TEntity>
 
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated, int locality)
     {
-        _entity.TimesCreated = timesCreated;
-        _entity.Locality = locality;
+        _entity.TimesCreated = timesCreated + new Random(_entity.GetHashCode()).Next(-locality, locality);
         return this;
     }
 
@@ -68,6 +91,11 @@ public sealed class SeederEntityBuilder<TEntity>
                     x.PropertyType == property.PropertyType);
         
         return new SeederPropertyBuilder<TProperty>(propertyInfo);
+    }
+    public SeederEntityBuilder<TEntity> ShuffleValues()
+    {
+        _entity.ShuffleValues = true;
+        return this;
     }
     
 
