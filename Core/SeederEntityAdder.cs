@@ -19,7 +19,7 @@ public class SeederEntityAdder<TDbContext>
         _serviceProvider = serviceProvider;
         _options = serviceProvider.GetKeyedService<SeederOptionsProvider>(typeof(TDbContext).Name)!.GetOptions();
     }
-    public async Task AddEntities(Dictionary<SeederEntityInfo, IEnumerable<object>> entities)
+    public async Task AddEntities(Dictionary<SeederEntityInfo, List<object>> entities)
     {
         
     }

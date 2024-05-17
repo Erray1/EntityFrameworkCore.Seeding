@@ -10,3 +10,8 @@ public interface ISeederEntityBuilder
 {
 
 }
+
+public interface ISeederEntityBuilder<TEntity>
+{
+
+}

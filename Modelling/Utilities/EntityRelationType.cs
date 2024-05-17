@@ -9,9 +9,11 @@ namespace EntityFrameworkCore.Seeding.Modelling.Utilities;
 public enum EntityRelationType
 {
     OneToOne,
+    OneToOneNullablePrinciple,
+    OneToOneNullableDependent,
     OneToOneNullable,
     OneToMany,
-    ManyToOne,
+    OneToManyNullableDependent,
     ManyToMany,
 
 }

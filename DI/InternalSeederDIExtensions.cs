@@ -33,7 +33,7 @@ public static partial class InternalSeederDIExtensions
 
     public static IServiceCollection ConfigureSeederModel<TDbContext, TSeeder>(this IServiceCollection services, bool isConfigurerArtificial)
         where TSeeder : SeederModel<TDbContext>
-        where TDbContext : DbContext
+        where TDbContext : DbContext, new()
     {
         var seederType = typeof(TSeeder);
 

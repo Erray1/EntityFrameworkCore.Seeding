@@ -20,7 +20,7 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
     private readonly TDbContext _dbContext;
 
     private readonly SeederEntityCreator<TDbContext> _entitiesCreator;
-    private Dictionary<SeederEntityInfo, IEnumerable<object>> _createdEntities;
+    private Dictionary<SeederEntityInfo, List<object>> _createdEntities;
 
     private readonly SeederEntityBinder _entityBinder;
     private readonly SeederEntityAdder<TDbContext> _entityAdder;
@@ -37,13 +37,6 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
         _entityBinder = entityBinder;
         _entityAdder = entityAdder;
         _dbContext = dbContext;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        // Delete all seeded data if required
-        // Dispose dbFactory
-        _createdEntities.Clear();
     }
 
     public async Task ExecuteSeedingAsync(CancellationToken cancellationToken)

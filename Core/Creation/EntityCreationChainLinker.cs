@@ -25,6 +25,10 @@ public class EntityCreationChainLinker
     {
         var options = new SeederEntityCreationPolicyOptions();
         var propsGroupedByCreationType = groupPropertiesByCreationType(entity);
+        if (propsGroupedByCreationType.Count == 0)
+        {
+
+        }
         SeederPropertiesCreationPolicy? current = _policyFactory.CreatePolicyFor(propsGroupedByCreationType.ElementAt(0).Key);
 
         var enumerator = propsGroupedByCreationType.GetEnumerator();

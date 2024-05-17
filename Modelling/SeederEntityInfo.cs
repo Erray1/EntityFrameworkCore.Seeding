@@ -5,6 +5,7 @@ namespace EntityFrameworkCore.Seeding.Modelling;
 
 public sealed class SeederEntityInfo
 {
+    public bool DoCreate { get; set; }
     public bool IsConfigured;
     public Type EntityType { get; init; }
     public int TimesCreated { get; set; }
@@ -12,8 +13,9 @@ public sealed class SeederEntityInfo
     public SeederStockDataCollection? LoadedValues { get; set; }
     public bool StrictMatchingForLoadedData { get; set; }
     public bool IsPrincipal {  get; set; }
+    public Dictionary<SeederEntityInfo, int> NumberOfBoundEntitiesInOneToManyRelationships { get; set; } = new();
     public Dictionary<SeederEntityInfo, SeederEntityRelationInfo> LinkedEntities { get; set; } = new();
-    public Dictionary<SeederEntityInfo, double> NullableLinkedEntitiesProbabilities { get; set; } = new();
+    public Dictionary<SeederEntityInfo, double?> NullableLinkedEntitiesProbabilities { get; set; } = new();
     public List<object>? PossibleValues { get; set; }
     public List<SeederPropertyInfo> Properties { get; set; } = new();
     public SeederEntityInfo(Type entityType)

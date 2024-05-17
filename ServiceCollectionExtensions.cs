@@ -9,7 +9,7 @@ namespace EntityFrameworkCore.Seeding;
 public static class SeederServiceCollectionExtensions
 {
     public static IServiceCollection AddSeeder<TDbContext, TSeeder>(this IServiceCollection services, Action<ISeederOptionsBuilder>? optionsAction = null)
-        where TDbContext : DbContext
+        where TDbContext : DbContext, new()
         where TSeeder : SeederModel<TDbContext>
     {
         services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction, out SeederOptions options);

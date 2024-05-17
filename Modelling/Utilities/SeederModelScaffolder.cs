@@ -8,7 +8,7 @@ namespace EntityFrameworkCore.Seeding.Modelling.Utilities;
 public static class SeederModelScaffolder
 {
     public static SeederModelInfo CreateEmptyFromDbContext<TDbcontext>()
-        where TDbcontext : DbContext
+        where TDbcontext : DbContext, new()
     {
         var model = new SeederModelInfo();
         addEntitiesAndProperties<TDbcontext>(model);

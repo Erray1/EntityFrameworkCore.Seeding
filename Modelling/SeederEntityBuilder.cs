@@ -1,9 +1,11 @@
-﻿using EntityFrameworkCore.Seeding.StockData;
+﻿using EntityFrameworkCore.Seeding.Modelling.Utilities;
+using EntityFrameworkCore.Seeding.StockData;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using System.Linq.Expressions;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
-public sealed class SeederEntityBuilder<TEntity>
+public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
     where TEntity : class
 {
     private readonly SeederEntityInfo _entity;
@@ -36,6 +38,7 @@ public sealed class SeederEntityBuilder<TEntity>
         }
         return this;
     }
+
     class PropertyInfoAndPool
     {
         public SeederPropertyInfo PropertyInfo { get; set; }
@@ -57,6 +60,17 @@ public sealed class SeederEntityBuilder<TEntity>
         var relatedEntityInfo = _entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
         _entity.NullableLinkedEntitiesProbabilities[relatedEntityInfo] = probability;
         return this;
+    }
+
+    public SeederEntityBuilder<TEntity> HasEntityConnection<TRelatedEntity>(int timesConnected)
+    {
+        var relatedEntityInfo = _entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
+        _entity.NumberOfBoundEntitiesInOneToManyRelationships[relatedEntityInfo] = timesConnected;
+        return this;
+    }
+    public SeederEntityBuilder<TEntity> HasEntityConnection<TRelatedEntity>(int timesConnected, int locality)
+    {
+        return HasEntityConnection<TRelatedEntity>(timesConnected + new Random(_entity.GetHashCode()).Next(-locality, locality));
     }
 
     public void HasRandomValues()
@@ -98,6 +112,11 @@ public sealed class SeederEntityBuilder<TEntity>
         return this;
     }
     
+    public SeederEntityBuilder<TEntity> DoNotCreate()
+    {
+        _entity.DoCreate = false;
+        return this;
+    }
 
     private List<SeederPropertyInfo> getNotConfiguredProperties()
     {

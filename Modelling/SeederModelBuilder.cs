@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
 
-public sealed class SeederModelBuilder : ISeederBuilder, ISeederModelBuilder
+public class SeederModelBuilder : ISeederBuilder, ISeederModelBuilder
 {
     private readonly SeederModelInfo _model;
     public SeederModelBuilder(SeederModelInfo model)
