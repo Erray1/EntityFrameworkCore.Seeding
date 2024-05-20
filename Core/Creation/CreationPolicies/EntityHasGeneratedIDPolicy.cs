@@ -17,7 +17,7 @@ namespace EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies
             if (propertyType == typeof(int))
             {
                 var values = Enumerable
-                    .Range(0, _entityInfo.TimesCreated)
+                    .Range(1, _entityInfo.TimesCreated + 1)
                     .Cast<object>()
                     .ToList();
 
@@ -30,7 +30,7 @@ namespace EntityFrameworkCore.Seeding.Core.Creation.CreationPolicies
                 if (propertyType == typeof(string))
                 {
                     values = values
-                        .Select(x => x.ToString())
+                        .Select(x => ((Guid)x).ToString())
                         .Cast<object>()
                         .ToList();
                 }

@@ -6,22 +6,21 @@ using System.Threading.Tasks;
 
 namespace EntityFrameworkCore.Seeding.Modelling.Validation
 {
-    public class NumberOfLinkedEntitiesInOneToManyRelationshipsMustBeSpecified : SeederModelValidationRule
+    public class NumberOfLinkedEntitiesInManyToManyRelationshipsMustBeSpecified : SeederModelValidationRule
     {
-        public NumberOfLinkedEntitiesInOneToManyRelationshipsMustBeSpecified(SeederModelValidationRule? next) : base(next)
+        public NumberOfLinkedEntitiesInManyToManyRelationshipsMustBeSpecified(SeederModelValidationRule? next) : base(next)
         {
         }
 
         protected override IReadOnlyDictionary<SeederEntityInfo, List<string>> getValidationErrorsSummary(SeederModelInfo modelInfo)
         {
-            return modelInfo.Entities
-                .Where(x => x.NumberOfBoundEntitiesInOneToManyRelationships.Any(r => r.Value == 0))
+            var relationsWithErrors = modelInfo.ManyToManyRelations
+                .Where(x => !x.IsNumberOfboundEntitiesSpecified);
+            var data = relationsWithErrors
                 .Select(x => new KeyValuePair<SeederEntityInfo, List<string>>
-                (x, x.NumberOfBoundEntitiesInOneToManyRelationships
-                    .Where(r => r.Value == 0)
-                    .Select(r => $"Number of bound instances of {r.Key.EntityType.Name} must be specified")
-                    .ToList()))
+                (x.LeftEntityInfo, new List<string>() { $"Number of bound entities with {x.RightEntityInfo.EntityType.Name} is not specified" }))
                 .ToDictionary();
+            return data;
         }
     }
 }

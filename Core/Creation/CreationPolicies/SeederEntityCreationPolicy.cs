@@ -44,7 +44,7 @@ public abstract class SeederPropertiesCreationPolicy
 
             Span<object> poolAsSpan = CollectionsMarshal.AsSpan(pool.ToList());
 
-            if (_entityInfo.ShuffleValues)
+            if (propertyInfo.ShuffleValues)
             {
                 new Random(propertyInfo.GetHashCode()).Shuffle(poolAsSpan);
             }

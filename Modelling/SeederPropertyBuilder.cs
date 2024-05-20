@@ -46,18 +46,18 @@ public class SeederPropertyBuilder<TProperty>
         _property.PossibleValuesPool = values;
         return this;
     }
-    public SeederPropertyBuilder<TProperty> IsIdProperty(bool generateId = false)
+    public SeederPropertyBuilder<TProperty> IsIdProperty(bool generateId = true)
     {
-        
         _property.IsIdProperty = true;
         _property.IsConfigured = true;
         if (!generateId)
         {
             _property.DataCreationType = Core.SeederDataCreationType.DoNotCreate;
-            _property.GenerateId = true;
+            _property.GenerateId = false;
             return this;
         }
         _property.DataCreationType = Core.SeederDataCreationType.CreatedID;
+        _property.GenerateId = true;
         return this;
     }
     public SeederPropertyBuilder<TProperty> DoNotCreate()

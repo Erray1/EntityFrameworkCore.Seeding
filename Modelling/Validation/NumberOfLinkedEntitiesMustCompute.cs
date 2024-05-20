@@ -1,6 +1,8 @@
-﻿using System;
+﻿using EntityFrameworkCore.Seeding.Core.Binding;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,42 +15,53 @@ public class NumberOfLinkedEntitiesMustCompute : SeederModelValidationRule
 
     protected override IReadOnlyDictionary<SeederEntityInfo, List<string>> getValidationErrorsSummary(SeederModelInfo modelInfo)
     {
-        var entitiesWithErrors = modelInfo.Entities
-            .Select(x => new
+        var wrongOneToOneRelations = modelInfo.Relations
+            .Where(x => x.IsOneToOne)
+            .Where(x => !isRelationPossibleOneToOne(x))
+            .Select(x => new KeyValuePair<SeederEntityInfo, string>
+            (x.PrincipalEntityInfo, $"Relation with {x.DependentEntityInfo.EntityType.Name} is impossible with current configuration of number of created entities and bind probability"));
+
+        var wrongOneToManyRelations = modelInfo.Relations
+            .Where(x => !x.IsOneToOne)
+            .Where(x => !isRelationPossibleOneToMany(x))
+            .Select(x => new KeyValuePair<SeederEntityInfo, string>
+            (x.PrincipalEntityInfo, $"Relation with {x.DependentEntityInfo.EntityType.Name} is impossible with current configuration of number of created entities and bind probability"));
+
+        var wrongManyToManyRelations = modelInfo.ManyToManyRelations
+            .Where(x => !isRelationPossibleManyToMany(x))
+            .Select(x => new KeyValuePair<SeederEntityInfo, string>
+            (x.LeftEntityInfo, $"Relation with {x.RightEntityInfo.EntityType.Name} is impossible with current configuration of number of created entities and bind probability"));
+
+        var errors = wrongOneToOneRelations
+            .Concat(wrongOneToManyRelations)
+            .Concat(wrongManyToManyRelations);
+        var result = new Dictionary<SeederEntityInfo, List<string>>();
+
+        foreach (var error in errors)
+        {
+            if (result.ContainsKey(error.Key))
             {
-                Entity = x,
-                Links = x.NumberOfBoundEntitiesInOneToManyRelationships
-                    .Where(r => r.Value != -1 &&
-                    !isNumberOfBoundEntitiesPossible(
-                        x.TimesCreated,
-                        r.Value,
-                        r.Key.TimesCreated,
-                        x.NullableLinkedEntitiesProbabilities.TryGetValue(r.Key, out double? value) ? value!.Value : 1))
-            });
-
-            return entitiesWithErrors.Select(x => new KeyValuePair<SeederEntityInfo, List<string>>
-                (x.Entity, x.Links.Select(l =>
-                {
-                    x.Entity.NullableLinkedEntitiesProbabilities.TryGetValue(l.Key, out double? linkProbability);
-                    (int bestNumberOfLinks, int bestNumberOfCreatedDependentEntities) =
-                    getAdvice(x.Entity.TimesCreated, l.Value, l.Key.TimesCreated, linkProbability is not null ? linkProbability.Value : 1);
-
-                    return $"Current number of links between {x.Entity.EntityType.Name} and {l.Key.EntityType.Name} is impossible \n " +
-                    $"make number of links {bestNumberOfLinks} or set times created of {l.Key.EntityType.Name} as {bestNumberOfCreatedDependentEntities}";
-                })
-                .ToList()))
-            .ToDictionary();
-            
-            
-            
+                result[error.Key].Add(error.Value);
+            }
+            else
+            {
+                result[error.Key] = new List<string>() { error.Value };
+            }
+        }
+        return result;
     }
-    private bool isNumberOfBoundEntitiesPossible(int timesCreatedPrincipal, int numberOfLinks, int timesCreatedDpendent, double linkProbability = 1)
+    private bool isRelationPossibleOneToOne(EntityRelation relation)
     {
-        throw new NotImplementedException();
+        return relation.DependentEntityInfo.TimesCreated * relation.BindProbability <= relation.PrincipalEntityInfo.TimesCreated;
     }
-    private (int bestNumberOfLinks, int bestNumberOfCreatedDependentEntities) getAdvice(int timesCreatedPrincipal, int numberOfLinks, int timesCreatedDpendent, double linkProbability = 1)
+    private bool isRelationPossibleOneToMany(EntityRelation relation)
     {
-        throw new NotImplementedException();
+        return relation.DependentEntityInfo.TimesCreated * relation.BindProbability >= relation.PrincipalEntityInfo.TimesCreated;
+    }
+    private bool isRelationPossibleManyToMany(EntityManyToManyRelation relation)
+    {
+    #warning Не доделано
+        return true;
     }
 }
 

@@ -1,5 +1,7 @@
 ﻿using EntityFrameworkCore.Seeding.Core;
+using EntityFrameworkCore.Seeding.Core.Binding;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Data;
 using System.Reflection;
 
@@ -15,7 +17,7 @@ public static class SeederModelScaffolder
         return model;
     }
     private static void addEntitiesAndProperties<TDbContext>(SeederModelInfo model)
-        where TDbContext : DbContext
+        where TDbContext : DbContext, new()
     {
         var properties = typeof(TDbContext).GetProperties();
         var dbContextEntities = properties
@@ -36,73 +38,130 @@ public static class SeederModelScaffolder
             })
             .ToList();
 
-        configureEntities<TDbContext>(entities);
         model.Entities = entities;
+        configureEntitiesRelations<TDbContext>(model);
+        removeRelationalPropertiesFromEntities(model);
     }
 
-    private static void configureEntities<TDbContext>(List<SeederEntityInfo> entities)
-        where TDbContext : DbContext
+    private static void configureEntitiesRelations<TDbContext>(SeederModelInfo model)
+        where TDbContext : DbContext, new()
     {
-        var allEntityTypes = entities.Select(x => x.EntityType);
-        var linkedEntitiesAndRelationTypes = new Dictionary<SeederEntityInfo, SeederEntityRelationInfo>();
-        foreach (var entity in entities)
-        {
-            var linkedEntities_ = entity.EntityType.GetProperties()
-                .Where(x => allEntityTypes.Contains(x.PropertyType) ||
-                x.PropertyType.IsGenericType && allEntityTypes.Contains(x.PropertyType.GetGenericArguments()[0]));
+        var dbModel = new TDbContext().Model;
+        var entityTypes = dbModel.GetEntityTypes();
 
-            var linkedEntities = linkedEntities_
-                .Select(x => entities.Single(e => e.EntityType == x.PropertyType ||
-                x.PropertyType.IsGenericType && e.EntityType == x.PropertyType.GetGenericArguments()[0]))
-                .ToList();
-
-            linkedEntities.ForEach(x => linkedEntitiesAndRelationTypes.Add(x, getEntityRelation(entity, x)));
-            entity.LinkedEntities = new(linkedEntitiesAndRelationTypes);
-            removeRelationalProperties(entity);
-            linkedEntitiesAndRelationTypes.Clear();
-        }
-    }
-    private static void removeRelationalProperties(SeederEntityInfo entity)
-    {
-        var navigationPropsNames = entity.LinkedEntities
-                .Select(x => x.Value.Property.Name);
-        var propsToRemove = entity.Properties
-            .Where(x => navigationPropsNames.Contains(x.PropertyName))
+        var allNavigations = entityTypes
+            .SelectMany(x => x.GetNavigations())
             .ToList();
-        foreach (var property in propsToRemove)
+
+        var allManyToManyNavigations = entityTypes
+            .SelectMany(x => x.GetSkipNavigations())
+            .ToList();
+        List<EntityRelation> relations = new();
+        List<EntityManyToManyRelation> manyToManyRelations = new();
+        model.Relations = relations;
+        model.ManyToManyRelations = manyToManyRelations;
+        List<string> handledManyToManyNavigationJoinTypeNames = new();
+        foreach (var entityInfo in model.Entities)
+       {
+            var navigations = allNavigations
+               .Where(x => x.DeclaringEntityType.Name == entityInfo.EntityType.FullName);
+            var manyToManyNavigations = allManyToManyNavigations
+                .Where(x => x.DeclaringEntityType.Name == entityInfo.EntityType.FullName);
+
+            foreach (var navigation in navigations)
+            {
+                if (navigation.IsOnDependent) continue;
+                Type dependentEntityType = navigation.TargetEntityType.ClrType;
+                SeederEntityInfo dependentEntity = model.Entities.Single(x => x.EntityType == dependentEntityType);
+                EntityRelation relation = new(entityInfo, dependentEntity, navigation);
+
+                EntityRelationType relationType = getEntitiesRelationType(relation.PrincipalNavigationProperty, relation.DependentNavigationProperty);
+                relation.IsOneToOne = relationType == EntityRelationType.OneToOne;
+
+                relations.Add(relation);
+            }
+            
+            foreach (var navigation in manyToManyNavigations)
+            {
+                var joinType = navigation.JoinEntityType;
+                if (handledManyToManyNavigationJoinTypeNames.Contains(joinType.Name)) continue;
+                Type dependentEntityType = navigation.TargetEntityType.ClrType;
+                SeederEntityInfo dependentEntity = model.Entities.Single(x => x.EntityType == dependentEntityType);
+                EntityManyToManyRelation relation = new(entityInfo, dependentEntity, navigation);
+                manyToManyRelations.Add(relation);
+
+                handledManyToManyNavigationJoinTypeNames.Add(joinType.Name);
+            }
+
+        }
+    }
+    private static void removeRelationalPropertiesFromEntities(SeederModelInfo model)
+    {
+        foreach (var relation in model.Relations)
         {
-            entity.Properties.Remove(property);
+            var principalNavigationProperty = relation.PrincipalNavigationProperty;
+            var principalPropertyToRemove = relation.PrincipalEntityInfo.Properties
+                .Single(x => x.PropertyName == principalNavigationProperty.Name
+                && x.PropertyType == principalNavigationProperty.PropertyType);
+            relation.PrincipalEntityInfo.Properties.Remove(principalPropertyToRemove);
+
+            # warning убирает навигацию, но не внешний ключ
+            if (relation.DependentEntityHasNavigation)
+            {
+                var dependentNavigationProperty = relation.DependentNavigationProperty;
+                var dependentNavigationPropertyToRemove = relation.DependentEntityInfo.Properties
+                    .Single(x => x.PropertyName == dependentNavigationProperty!.Name &&
+                    x.PropertyType == dependentNavigationProperty.PropertyType);
+                relation.DependentEntityInfo.Properties.Remove(dependentNavigationPropertyToRemove);
+            }
+            foreach (var foreignKeyProperty in relation.DependentForeignKeyProperties)
+            {
+                var propertyInfoToRemove = relation.DependentEntityInfo.Properties
+                    .Single(x => x.PropertyName == foreignKeyProperty.Name &&
+                        x.PropertyType == foreignKeyProperty.PropertyType);
+                relation.DependentEntityInfo.Properties.Remove(propertyInfoToRemove);
+            }
+            
+        }
+
+        foreach (var relation in model.ManyToManyRelations)
+        {
+            var principalNavigationProperty = relation.LeftNavigationProperty;
+            var principalPropertyToRemove = relation.LeftEntityInfo.Properties
+                .Single(x => x.PropertyName == principalNavigationProperty.Name
+                && x.PropertyType == principalNavigationProperty.PropertyType);
+            relation.LeftEntityInfo.Properties.Remove(principalPropertyToRemove);
+
+            var dependentNavigationProperty = relation.RightNavigationProperty;
+            var dependentNavigationPropertyToRemove = relation.RightEntityInfo.Properties
+                .Single(x => x.PropertyName == dependentNavigationProperty.Name &&
+                x.PropertyType == dependentNavigationProperty.PropertyType);
+            relation.RightEntityInfo.Properties.Remove(dependentNavigationPropertyToRemove);
         }
 
     }
-    private static SeederEntityRelationInfo getEntityRelation(SeederEntityInfo fromEntity, SeederEntityInfo toEntity)
+    private static EntityRelationType getEntitiesRelationType(PropertyInfo principalProperty, PropertyInfo? dependentProperty)
     {
-        Type toEntityType = toEntity.EntityType;
+        bool isPrincipalCollection = isCollection(principalProperty.PropertyType);
 
-        // Compute link property
 
-        PropertyInfo linkProperty = fromEntity.EntityType.GetProperties()
-            .Single(x => x.PropertyType == toEntityType ||
-            x.PropertyType.IsGenericType && x.PropertyType.GetGenericArguments()[0] == toEntityType);
-        bool isNavigationProperty = linkProperty.PropertyType.IsInstanceOfType(toEntity.EntityType);
-
-        // Compute entity relation type
-
-        EntityRelationType relationType;
-
-        if (linkProperty.PropertyType.IsGenericType)
+        if (isPrincipalCollection) // 1 : N
         {
-            relationType = EntityRelationType.OneToMany;
+            return EntityRelationType.OneToMany;
         }
-
-        var isPropertyNullable = new NullabilityInfoContext().Create(linkProperty).WriteState is NullabilityState.Nullable;
-        if (isPropertyNullable)
+        if (!isPrincipalCollection) // 1 : 1
         {
-            fromEntity.NullableLinkedEntitiesProbabilities.Add(toEntity, 1);
-            relationType = EntityRelationType.OneToOneNullable;
+
+            return EntityRelationType.OneToOne;
+
         }
-        relationType = EntityRelationType.OneToOne;
-        return new SeederEntityRelationInfo(linkProperty, relationType, isNavigationProperty);
+        throw new NotSupportedException($"Unknow relation type between {principalProperty.DeclaringType!.Name} and {dependentProperty.DeclaringType!.Name}");
+    }
+    private static bool isCollection(Type type)
+    {
+        var interfaces = type.GetInterfaces();
+
+        return interfaces.Any(x => x.Name.Contains("IEnumerable")) && type != typeof(string);
     }
 
     private static List<PropertyInfo> getProperties(Type entityType)

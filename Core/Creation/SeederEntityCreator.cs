@@ -22,9 +22,10 @@ public sealed class SeederEntityCreator<TDbContext>
     public Dictionary<SeederEntityInfo, List<object>> CreateEntities()
     {
         Dictionary<SeederEntityInfo, List<object>> createdEntities = new();
-        using (var scope = _scopeFactory.CreateScope())
+
+        foreach (var entityInfo in _seederModel.Entities)
         {
-            foreach (var entityInfo in _seederModel.Entities)
+            using (var scope = _scopeFactory.CreateScope())
             {
                 var entities = createEmptyEntities(entityInfo);
 
@@ -36,8 +37,7 @@ public sealed class SeederEntityCreator<TDbContext>
                 }
 
                 createdEntities.Add(entityInfo, entities);
-            }
-            
+            } 
         }
         return createdEntities;
     }

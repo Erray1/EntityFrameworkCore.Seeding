@@ -27,13 +27,21 @@ public class EntityCreationChainLinker
         var propsGroupedByCreationType = groupPropertiesByCreationType(entity);
         if (propsGroupedByCreationType.Count == 0)
         {
-
+            throw new Exception($"Do not need to create props. Use DoNotCreate() method on entity {entity.EntityType.Name}");
         }
         SeederPropertiesCreationPolicy? current = _policyFactory.CreatePolicyFor(propsGroupedByCreationType.ElementAt(0).Key);
-
         var enumerator = propsGroupedByCreationType.GetEnumerator();
-
         _first = current;
+
+        if (propsGroupedByCreationType.Count == 1)
+        {
+            options.PropertiesCreated = propsGroupedByCreationType.First().Value;
+            options.EntityInfo = entity;
+            _first.SetOptions(options);
+        }
+        
+
+        
 
         for (int i = 1; i < propsGroupedByCreationType.Count; i++)
         {
@@ -58,6 +66,7 @@ public class EntityCreationChainLinker
                 current.SetOptions(options);
             }
         }
+        enumerator.Reset();
 
         return _first;
     }

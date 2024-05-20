@@ -1,206 +1,153 @@
-﻿using EntityFrameworkCore.Seeding.Modelling;
+﻿using EntityFrameworkCore.Seeding.DI;
+using EntityFrameworkCore.Seeding.Modelling;
 using EntityFrameworkCore.Seeding.Modelling.Utilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace EntityFrameworkCore.Seeding.Core.Binding;
-public class SeederEntityBinder
+public class SeederEntityBinder<TDbContext>
 {
-    protected IModel _dbModel;
-    protected Dictionary<SeederEntityInfo, List<object>> _entities;
-    public void BindEntities(Dictionary<SeederEntityInfo, List<object>> entities, IModel dbModel)
+    public SeederEntityBinder(IServiceProvider serviceProvider)
+    {
+        _model = serviceProvider.GetRequiredKeyedService<SeederModelProvider>(typeof(TDbContext).Name).GetModel();
+    }
+    private SeederModelInfo _model;
+    private Dictionary<SeederEntityInfo, List<object>> _entities;
+    public void BindEntities(Dictionary<SeederEntityInfo, List<object>> entities)
     {
         _entities = entities;
-        _dbModel = dbModel;
 
-        var entityTypes = dbModel.GetEntityTypes();
-
-        var allNavigations = entityTypes
-            .SelectMany(x => x.GetNavigations())
-            .ToList();
-
-        var allManyToManyNavigations = entityTypes
-            .SelectMany(x => x.GetSkipNavigations())
-            .ToList();
-
-        foreach (var (entity, pool) in entities)
+        foreach (var relation in _model.Relations) // 1:1 and 1:N
         {
-            var navigations = allNavigations
-                .Where(x => x.DeclaringEntityType.Name == entity.EntityType.FullName);
+            List<object> principalPool = entities[relation.PrincipalEntityInfo];
+            List<object> dependentPool = entities[relation.DependentEntityInfo];
+            var random = new Random(relation.PrincipalEntityInfo.GetHashCode());
 
-            var manyToManyNavigations = allManyToManyNavigations
-                .Where(x => x.DeclaringEntityType.Name == entity.EntityType.FullName);
-
-            foreach (var navigation in navigations) // 1:1 and 1:N
+            if (relation.IsOneToOne)
             {
-                if (navigation.IsOnDependent) continue;
-
-                IForeignKey foreignKey = navigation.ForeignKey;
-                Type dependentEntityType = navigation.TargetEntityType.ClrType;
-
-                (SeederEntityInfo dependentEntity, List<object> dependentPool)
-                    = entities.Single(x => x.Key.EntityType == dependentEntityType);
-
-                PropertyInfo principalNavigationProperty = navigation.PropertyInfo!;
-
-                INavigation? inverseNavigation = navigation.Inverse;
-
-                // Имеется ли навигация или по внешнему ключу
-                bool dependentEntityHasNavigation = inverseNavigation != null;
-                PropertyInfo dependentNavigationProperty = dependentEntityHasNavigation ?
-                    inverseNavigation!.PropertyInfo! :
-                    foreignKey.Properties.First().PropertyInfo!;
-                
-
-                EntityRelationType relationType = getEntitiesRelationType(principalNavigationProperty, dependentNavigationProperty); ;
-
-                if (relationType == EntityRelationType.OneToOne || relationType == EntityRelationType.OneToOneNullable)
+                for (int i = 0; i < relation.PrincipalEntityInfo.TimesCreated; i++)
                 {
-                    for (int i = 0; i < entity.TimesCreated; i++)
+                    if (relation.IsNullable && random.NextDouble() < relation.BindProbability) continue;
+                    var principalEntityObject = principalPool[i];
+                    var dependentEntityObject = dependentPool[i];
+
+                    if (relation.DependentEntityHasNavigation)
                     {
-                        var principalEntityObject = pool[i];
-                        var dependentEntityObject = dependentPool[i];
-                        if (dependentEntityHasNavigation)
-                        {
-                            dependentNavigationProperty.SetValue(dependentEntityObject, principalEntityObject);
-                        }
-                        var dependentForeignKeyProperty = foreignKey.Properties.First().PropertyInfo!;
-                        var principalPrimaryKey = navigation.ForeignKey.PrincipalEntityType
-                            .FindDeclaredPrimaryKey()!
-                            .Properties[0]
-                            .PropertyInfo!
-                            .GetValue(principalEntityObject);
-
-                        principalNavigationProperty.SetValue(principalEntityObject, dependentEntityObject);
-                        dependentForeignKeyProperty.SetValue(dependentEntityObject, principalPrimaryKey);
+                        relation.DependentNavigationProperty!.SetValue(dependentEntityObject, principalEntityObject);
                     }
+                    var principalPrimaryKey = relation.PrimaryKeyProperty.GetValue(principalEntityObject);
+
+                    relation.PrincipalNavigationProperty.SetValue(principalEntityObject, dependentEntityObject);
+                    relation.DependentForeignKeyProperties[0].SetValue(dependentEntityObject, principalPrimaryKey);
                 }
-                else if (relationType == EntityRelationType.OneToMany || relationType == EntityRelationType.OneToManyNullableDependent)
-                {
-                    var dependentPoolSpan = CollectionsMarshal.AsSpan(dependentPool);
-                    var random = new Random(dependentEntityType.GetHashCode());
-                    random.Shuffle(dependentPoolSpan);
-
-                    Stack<object> dependentEntitiesStack = new Stack<object>(dependentPoolSpan.ToArray());
-                    # warning Доделай блять эту хуйню уже нормально сука
-                    int numberOfBoundaries = 3; // entity.NumberOfBoundEntitiesInOneToManyRelationships[dependentEntity];
-                    bool nullable = entity.NullableLinkedEntitiesProbabilities.TryGetValue(dependentEntity, out double? boundProbability);
-
-                    MethodInfo principalNavigationCollectionAddMethod = principalNavigationProperty
-                                .PropertyType
-                                .GetRuntimeMethods()
-                                .Single(x => x.Name == "Add");
-
-                    for (int i = 0; i < entity.TimesCreated; i++)
-                    {
-                        var principalEntityObject = pool[i];
-                        var principalPrimaryKey = navigation.ForeignKey.PrincipalEntityType
-                                .FindDeclaredPrimaryKey()!
-                                .Properties[0]
-                                .PropertyInfo!
-                                .GetValue(principalEntityObject);
-                        object principalCollection = principalNavigationProperty.GetGetMethod()!.Invoke(principalEntityObject, [])!;
-
-                        for (int j = 0; j < numberOfBoundaries; j++)
-                        {
-                            var dependentEntityObject = dependentEntitiesStack.Pop();
-                            if (nullable && random.NextDouble() < boundProbability) continue; // Бывает не повезло не фортануло
-
-                            if (dependentEntityHasNavigation)
-                            {
-                                dependentNavigationProperty.SetValue(dependentEntityObject, principalEntityObject);
-                            }
-                            PropertyInfo dependentForeignKeyProperty = foreignKey.Properties.First().PropertyInfo!;
-                            
-                            principalNavigationCollectionAddMethod.Invoke(principalCollection, [dependentEntityObject]);
-
-                            dependentForeignKeyProperty.SetValue(dependentEntityObject, principalPrimaryKey);
-                        }
-                    }
-                }
-            }
-            foreach (var navigation in manyToManyNavigations)
-            {
-                IForeignKey foreignKey = navigation.ForeignKey;
-                Type dependentEntityType = navigation.TargetEntityType.ClrType;
-
-                (SeederEntityInfo dependentEntity, List<object> dependentPool)
-                    = entities.Single(x => x.Key.EntityType == dependentEntityType);
-
-                PropertyInfo principalNavigationProperty = navigation.PropertyInfo!;
-                PropertyInfo dependentNavigationProperty = navigation.Inverse.PropertyInfo!;
-
-                MethodInfo principalNavigationCollectionAddMethod = principalNavigationProperty
-                                .PropertyType
-                                .GetRuntimeMethods()
-                                .Single(x => x.Name == "Add");
-                MethodInfo dependentNavigationCollectionAddMethod = dependentNavigationProperty
-                                .PropertyType
-                                .GetRuntimeMethods()
-                                .Single(x => x.Name == "Add");
-
-                var random = new Random(dependentEntityType.GetHashCode());
-
-                for (int i = 0; i < entity.TimesCreated; i++)
-                {
-                    var principalEntityObject = pool[i];
-                    object principalCollection = principalNavigationProperty.GetGetMethod()!.Invoke(principalEntityObject, [])!;
-                    int numberOfBoundaries = 100; // entity.NumberOfBoundEntitiesInOneToManyRelationships[dependentEntity];
-
-                    for (int j = 0; j < numberOfBoundaries / 2; j++)
-                    {
-                        var dependentEntityObject = dependentPool[random.Next(0, numberOfBoundaries)];
-                        object dependentCollection = dependentNavigationProperty.GetGetMethod()!.Invoke(dependentEntityObject, [])!;
-                        principalNavigationCollectionAddMethod.Invoke(principalCollection, [dependentEntityObject]);
-                        dependentNavigationCollectionAddMethod.Invoke (dependentCollection, [principalEntityObject]);
-                    }
-                }
-            }
-        }
-        return;
-    }
-    private EntityRelationType getEntitiesRelationType(PropertyInfo principalProperty, PropertyInfo dependentProperty)
-    {
-        bool isPrincipalNullable = new NullabilityInfoContext().Create(principalProperty).WriteState is NullabilityState.Nullable;
-        bool isDependentNullable = new NullabilityInfoContext().Create(dependentProperty).WriteState is NullabilityState.Nullable;
-        bool isPrincipalCollection = isCollection(principalProperty.PropertyType);
-        bool isDependentCollection = isCollection(dependentProperty.PropertyType);
-
-        if (isPrincipalCollection && isDependentCollection) // N : N
-        {
-            return EntityRelationType.ManyToMany;
-        }
-        if (isPrincipalCollection && !isDependentCollection) // 1 : N
-        {
-            if (isDependentNullable)
-            {
-                return EntityRelationType.OneToManyNullableDependent;
-            }
-            return EntityRelationType.OneToMany;
-        }
-        if (!isPrincipalCollection && !isDependentCollection) // 1 : 1
-        {
-            if (isPrincipalNullable && isDependentNullable)
-            {
-                return EntityRelationType.OneToOneNullable;
             }
             else
             {
-                return EntityRelationType.OneToOne;
+                var dependentPoolSpan = CollectionsMarshal.AsSpan(dependentPool);
+                random.Shuffle(dependentPoolSpan);
+
+                Stack<object> dependentEntitiesStack = new Stack<object>(dependentPoolSpan.ToArray());
+                MethodInfo principalNavigationCollectionAddMethod = relation.PrincipalNavigationProperty
+                            .PropertyType
+                            .GetRuntimeMethods()
+                            .Single(x => x.Name == "Add");
+
+                for (int i = 0; i < relation.DependentEntityInfo.TimesCreated; i++)
+                {
+                    var principalEntityObject = principalPool[random.Next(0, relation.PrincipalEntityInfo.TimesCreated)];
+                    object dependentEntityObject = dependentEntitiesStack.Pop();
+
+                    object principalCollection = relation.PrincipalNavigationProperty
+                        .GetGetMethod()!
+                        .Invoke(principalEntityObject, [])!;
+                    var principalPrimaryKey = relation.PrimaryKeyProperty.GetValue(principalEntityObject);
+
+                    if (relation.IsNullable && random.NextDouble() > relation.BindProbability) continue; // Бывает не повезло не фортануло
+
+                    if (relation.DependentEntityHasNavigation)
+                    {
+                        relation.DependentNavigationProperty!.SetValue(dependentEntityObject, principalEntityObject);
+                    }
+                    PropertyInfo dependentForeignKeyProperty = relation.DependentForeignKeyProperties.First();
+
+                    principalNavigationCollectionAddMethod.Invoke(principalCollection, [dependentEntityObject]);
+
+                    dependentForeignKeyProperty.SetValue(dependentEntityObject, principalPrimaryKey);
+                }
+                //for (int i = 0; i < relation.PrincipalEntityInfo.TimesCreated; i++)
+                //{
+                //    var principalEntityObject = principalPool[i];
+                //    var principalPrimaryKey = relation.PrimaryKeyProperty.GetValue(principalEntityObject);
+                //    bool dependendentEntitiesStackHasObject = true;
+
+                //    object principalCollection = relation.PrincipalNavigationProperty
+                //        .GetGetMethod()!
+                //        .Invoke(principalEntityObject, [])!;
+
+                //    int numberOfBoundaries = relation.DependentEntityInfo.TimesCreated / relation.PrincipalEntityInfo.TimesCreated;
+
+                //    for (int j = 0; j < numberOfBoundaries; j++)
+                //    {
+                //        dependendentEntitiesStackHasObject = dependentEntitiesStack.TryPeek(out object? dependentEntityObject);
+                //        if (!dependendentEntitiesStackHasObject) break;
+                //        if (relation.IsNullable && random.NextDouble() > relation.BindProbability) continue; // Бывает не повезло не фортануло
+
+                //        if (relation.DependentEntityHasNavigation)
+                //        {
+                //            relation.DependentNavigationProperty!.SetValue(dependentEntityObject, principalEntityObject);
+                //        }
+                //        PropertyInfo dependentForeignKeyProperty = relation.DependentForeignKeyProperties.First();
+
+                //        principalNavigationCollectionAddMethod.Invoke(principalCollection, [dependentEntityObject]);
+
+                //        dependentForeignKeyProperty.SetValue(dependentEntityObject, principalPrimaryKey);
+                //    }
+                //    if (!dependendentEntitiesStackHasObject) break;
+                //}
             }
         }
-        throw new NotSupportedException($"Unknow relation type between {principalProperty.DeclaringType!.Name} and {dependentProperty.DeclaringType!.Name}");
-    }
+        foreach (var relation in _model.ManyToManyRelations)
+        {
+            var (leftSummary, rightSummary) = relation.GetSummary();
+            List<object> leftPool = entities[leftSummary.EntityInfo];
+            List<object> rightPool = entities[rightSummary.EntityInfo];
 
-    private bool isCollection(Type type)
-    {
-        var interfaces = type.GetInterfaces();
+            MethodInfo leftNavigationCollectionAddMethod = leftSummary.NavigationProperty
+                            .PropertyType
+                            .GetRuntimeMethods()
+                            .Single(x => x.Name == "Add");
+            MethodInfo rightNavigationCollectionAddMethod = rightSummary.NavigationProperty
+                            .PropertyType
+                            .GetRuntimeMethods()
+                            .Single(x => x.Name == "Add");
 
-        return interfaces.Any(x => x.Name.Contains("IEnumerable")) && type != typeof(string);
+            var random = new Random(leftSummary.EntityInfo.GetHashCode() + rightSummary.EntityInfo.GetHashCode());
+
+            for (int i = 0; i < leftSummary.EntityInfo.TimesCreated; i++)
+            {
+                var leftEntityObject = leftPool[i];
+                object leftCollection = leftSummary.NavigationProperty
+                    .GetGetMethod()!
+                    .Invoke(leftEntityObject, [])!;
+                int numberOfBounds = leftSummary.NumberOfBoundEntities + leftSummary.BindLocality;
+
+                for (int j = 0; j < numberOfBounds; j++)
+                {
+                    var rightEntityObject = rightPool[random.Next(0, rightSummary.EntityInfo.TimesCreated)];
+                    object rightCollection = rightSummary.NavigationProperty
+                        .GetGetMethod()!
+                        .Invoke(rightEntityObject, [])!;
+                    leftNavigationCollectionAddMethod.Invoke(leftCollection, [rightEntityObject]);
+                    rightNavigationCollectionAddMethod.Invoke(rightCollection, [leftEntityObject]);
+                }
+            }
+        }
     }
 }
 

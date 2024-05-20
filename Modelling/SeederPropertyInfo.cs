@@ -33,7 +33,21 @@ public class SeederPropertyInfo
     public bool IsLoadedFromJson { get; set; } = false;
     public string? JsonRelativePath { get; set; }
     public bool ShuffleValues { get; set; } = false;
-    public SeederDataCreationType DataCreationType { get; set; }
+    private SeederDataCreationType dataCreationType;
+    public SeederDataCreationType DataCreationType { 
+        get
+        {
+            return dataCreationType;
+        }
+        set
+        {
+            if (value == SeederDataCreationType.CreatedID)
+            {
+                ShuffleValues = false;
+            }
+            dataCreationType = value;
+        }
+    }
     public override int GetHashCode()
     {
         return PropertyType.GetHashCode() + PropertyName.GetHashCode();

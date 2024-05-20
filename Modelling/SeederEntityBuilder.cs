@@ -8,10 +8,14 @@ namespace EntityFrameworkCore.Seeding.Modelling;
 public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
     where TEntity : class
 {
+    private readonly SeederModelInfo _model;
     private readonly SeederEntityInfo _entity;
-    public SeederEntityBuilder(SeederEntityInfo info)
+    public SeederEntityBuilder(
+        SeederEntityInfo entity,
+        SeederModelInfo model)
     {
-        _entity = info;
+        _entity = entity;
+        _model = model;
     }
     public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values, bool mixValues = false,
         params string[] exceptPropertiesNames) 
@@ -57,20 +61,27 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
 
     public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(double probability)
     {
-        var relatedEntityInfo = _entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
-        _entity.NullableLinkedEntitiesProbabilities[relatedEntityInfo] = probability;
+        var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
+        var relation = _model.Relations.Single(x => x.DependentEntityInfo.EntityType == relatedEntityInfo.EntityType);
+        relation.BindProbability = probability;
         return this;
     }
 
-    public SeederEntityBuilder<TEntity> HasEntityConnection<TRelatedEntity>(int timesConnected)
+    public SeederEntityBuilder<TEntity> HasNumberOfConnectionsInManyToMany<TRelatedEntity>(int timesConnected, int locality = 0)
     {
-        var relatedEntityInfo = _entity.NullableLinkedEntitiesProbabilities.Keys.Single(x => x.EntityType == typeof(TRelatedEntity));
-        _entity.NumberOfBoundEntitiesInOneToManyRelationships[relatedEntityInfo] = timesConnected;
+
+        if (timesConnected <= 0)
+        {
+            throw new ArgumentException("Number of connections cannot be <= 0.\n If you want to avoid connections, exclude entity from model using DoNotCreate() method");
+        }
+        if (locality < 0)
+        {
+            throw new ArgumentException("Locality cannot be negative");
+        }
+        var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
+        var relation = _model.ManyToManyRelations.Single(x => x.Compare(_entity, relatedEntityInfo));
+        relation.SetNumberOfBoundEntitiesFor(_entity, timesConnected);
         return this;
-    }
-    public SeederEntityBuilder<TEntity> HasEntityConnection<TRelatedEntity>(int timesConnected, int locality)
-    {
-        return HasEntityConnection<TRelatedEntity>(timesConnected + new Random(_entity.GetHashCode()).Next(-locality, locality));
     }
 
     public void HasRandomValues()
@@ -109,12 +120,34 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
     public SeederEntityBuilder<TEntity> ShuffleValues()
     {
         _entity.ShuffleValues = true;
+        foreach (var property in _entity.Properties)
+        {
+            property.ShuffleValues = true;
+        }
         return this;
     }
     
     public SeederEntityBuilder<TEntity> DoNotCreate()
     {
+        var relationsToRemove = _model.Relations
+            .Where(x => x.PrincipalEntityInfo == _entity
+            || x.DependentEntityInfo == _entity);
+        foreach (var relation  in relationsToRemove)
+        {
+            _model.Relations.Remove(relation);
+        }
+
+        var manyToManyRelationsToRemove = _model.ManyToManyRelations
+            .Where(x => x.LeftEntityInfo == _entity
+            || x.RightEntityInfo == _entity);
+        foreach (var relation in manyToManyRelationsToRemove)
+        {
+            _model.ManyToManyRelations.Remove(relation);
+        }
+
+        _model.Entities.Remove(_entity);
         _entity.DoCreate = false;
+
         return this;
     }
 

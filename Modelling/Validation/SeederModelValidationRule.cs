@@ -18,6 +18,7 @@ namespace EntityFrameworkCore.Seeding.Modelling.Validation
                 if (hasEntity)
                 {
                     errorsOfEntity!.AddRange(newErrors);
+                    continue;
                 }
                 context.Add(entity, newErrors!);
             }

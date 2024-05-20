@@ -22,12 +22,12 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
     private readonly SeederEntityCreator<TDbContext> _entitiesCreator;
     private Dictionary<SeederEntityInfo, List<object>> _createdEntities;
 
-    private readonly SeederEntityBinder _entityBinder;
+    private readonly SeederEntityBinder<TDbContext> _entityBinder;
     private readonly SeederEntityAdder<TDbContext> _entityAdder;
 
     public Seeder(
         IServiceProvider serviceProvider,
-        SeederEntityBinder entityBinder,
+        SeederEntityBinder<TDbContext> entityBinder,
         SeederEntityAdder<TDbContext> entityAdder,
         TDbContext dbContext)
     {
@@ -45,7 +45,7 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
         while (!cancellationToken.IsCancellationRequested)
         {
             _createdEntities = _entitiesCreator.CreateEntities()!;
-            _entityBinder.BindEntities(_createdEntities, _dbContext.Model);
+            _entityBinder.BindEntities(_createdEntities);
             await _entityAdder.AddEntities(_createdEntities);
         }
     }

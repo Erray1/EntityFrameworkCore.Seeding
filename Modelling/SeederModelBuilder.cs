@@ -19,17 +19,17 @@ public class SeederModelBuilder : ISeederBuilder, ISeederModelBuilder
         where TEntity : class
     {
         var entityInfo = _model.Entities.Single(x =>  x.EntityType == typeof(TEntity));
-        return new SeederEntityBuilder<TEntity>(entityInfo);
+        return new SeederEntityBuilder<TEntity>(entityInfo, _model);
     }
     public void RandomizeEveryEntity()
     {
         foreach (var entity in _model.Entities)
         {
             entity.TimesCreated = Random.Shared.Next(0, 30);
-            foreach (var entityLink in entity.NullableLinkedEntitiesProbabilities)
-            {
-                entity.NullableLinkedEntitiesProbabilities[entityLink.Key] = Random.Shared.NextDouble();
-            }
+            //foreach (var entityLink in entity.NullableLinkedEntitiesProbabilities)
+            //{
+            //    entity.NullableLinkedEntitiesProbabilities[entityLink.Key] = Random.Shared.NextDouble();
+            //}
             foreach (var property in entity.Properties)
             {
                 property.AreValuesRandom = true;

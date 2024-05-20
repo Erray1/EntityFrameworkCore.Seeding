@@ -3,6 +3,7 @@ using EntityFrameworkCore.Seeding.Modelling;
 using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Reflection;
 
 namespace EntityFrameworkCore.Seeding;
 
@@ -12,13 +13,12 @@ public static class SeederServiceCollectionExtensions
         where TDbContext : DbContext, new()
         where TSeeder : SeederModel<TDbContext>
     {
+        if (!dbContextImplementsOnConfiguringMethod<TDbContext>())
+        {
+            throw new Exception($"{typeof(TDbContext).Name} must override OnConfiguring() method for seeder to work");
+        }
         services.ConfigureSeederOptions<TDbContext, TSeeder>(optionsAction, out SeederOptions options);
         services.ConfigureSeederModel<TDbContext, TSeeder>(options.ArtificialModelConfiguring);
-
-        if (options.HasLogger)
-        {
-            services.AddSeederLoggingServices<TDbContext, TSeeder>();
-        }
 
         services.AddInitialSeedingServices<TDbContext, TSeeder>();
         services.AddCoreSeederServices<TDbContext, TSeeder>();
@@ -28,5 +28,12 @@ public static class SeederServiceCollectionExtensions
         }
             
         return services;
+    }
+    private static bool dbContextImplementsOnConfiguringMethod<TDbContext>()
+    {
+    #warning ДОПИСАТЬ
+        return true;
+        //var type = typeof(TDbContext);
+        //type.GetMethod()
     }
 }
