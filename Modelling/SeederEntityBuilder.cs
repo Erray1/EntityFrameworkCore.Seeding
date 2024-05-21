@@ -3,6 +3,7 @@ using EntityFrameworkCore.Seeding.StockData;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using System.Linq.Expressions;
+using System.Text.Json;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
 public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
@@ -51,12 +52,21 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
 
     public SeederEntityBuilder<TEntity> HasValues(SeederStockDataCollection values, bool strictPropertyNameMatching = true)
     {
+        throw new NotImplementedException();
         _entity.LoadsData = true;
         _entity.LoadedValues = values;
         _entity.StrictMatchingForLoadedData = strictPropertyNameMatching;
         values.MarkEveryPropertyMappedToCollectionAsConfigured(_entity.Properties, strictPropertyNameMatching);
 
         return this;
+    }
+    public SeederJsonCreationBuilder<TEntity> HasValues(string jsonAbsolutePath, JsonSerializerOptions? options = null)
+    {
+        throw new NotImplementedException();
+        if (options is null) options = JsonSerializerOptions.Default;
+        EntityCreatedFromJsonInfo jsonInfo = new(jsonAbsolutePath, options);
+        _entity.JSONInfo.Add(jsonInfo);
+        return new SeederJsonCreationBuilder<TEntity>(_entity, jsonInfo);
     }
 
     public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(double probability)

@@ -30,8 +30,7 @@ public class SeederPropertyInfo
     public List<object>? PossibleValuesPool { get; set; }
     public SeederStockDataPropertyCollection? PossibleLoadedValues { get; set; }
     public bool AreValuesRandom { get; set; } = false;
-    public bool IsLoadedFromJson { get; set; } = false;
-    public string? JsonRelativePath { get; set; }
+    public EntityCreatedFromJsonInfo JsonInfo { get; set; }
     public bool ShuffleValues { get; set; } = false;
     private SeederDataCreationType dataCreationType;
     public SeederDataCreationType DataCreationType { 

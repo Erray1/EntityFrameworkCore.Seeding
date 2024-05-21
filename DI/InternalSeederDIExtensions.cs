@@ -90,7 +90,8 @@ public static partial class InternalSeederDIExtensions
             .Where(t => !t.IsAbstract
             && !t.IsInterface
             && t.IsSubclassOf(typeof(SeederPropertiesCreationPolicy)));
-        foreach (var policy in policies) services.AddScoped(policy);
+        //foreach (var policy in policies) services.AddScoped(policy);
+        foreach (var policy in policies) services.AddTransient(policy);
 
         return services;
     }

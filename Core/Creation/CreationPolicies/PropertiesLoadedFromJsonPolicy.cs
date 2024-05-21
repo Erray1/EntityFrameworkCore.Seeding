@@ -10,7 +10,8 @@ public class PropertiesLoadedFromJsonPolicy : SeederPropertiesCreationPolicy
 {
     protected override void createPropertiesPool()
     {
-        throw new NotImplementedException();
+        var jsonInfo = _propertiesFilledWithPolicy.First().JsonInfo;
+        var jsonString = File.ReadAllText(jsonInfo.JsonAbsolutePath);
     }
 }
 

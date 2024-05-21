@@ -2,6 +2,7 @@
 using EntityFrameworkCore.Seeding.Modelling;
 
 using System.Collections.Immutable;
+using System.Linq;
 
 
 namespace EntityFrameworkCore.Seeding.Core.Creation;
@@ -41,8 +42,6 @@ public class EntityCreationChainLinker
         }
         
 
-        
-
         for (int i = 1; i < propsGroupedByCreationType.Count; i++)
         {
             var currentProps = propsGroupedByCreationType.ElementAt(i - 1).Value;
@@ -74,16 +73,35 @@ public class EntityCreationChainLinker
     {
         var nonLoadedProps = entity.Properties
             .Where(x => x.PossibleLoadedValues is null)
+            .Where(x => x.DataCreationType != SeederDataCreationType.FromJSON)
             .GroupBy(x => x.DataCreationType)
-            .ToImmutableDictionary(g => g.Key, g => g.ToImmutableList());
+            .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
+                (
+                x.Key,
+                x.ToImmutableList()
+             ));
+
+        var jsonProps = entity.Properties
+            .Where(x => x.DataCreationType == SeederDataCreationType.FromJSON)
+            .GroupBy(x => x.JsonInfo.JsonAbsolutePath)
+            .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
+                (
+                SeederDataCreationType.FromJSON,
+                x.ToImmutableList()
+             ));
 
         var loadedProps = entity.Properties
             .Where(x => x.PossibleLoadedValues is not null)
             .GroupBy(x => x.PossibleLoadedValues)
-            .ToImmutableDictionary(g => SeederDataCreationType.Loaded, g => g.ToImmutableList());
+            .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
+                (
+                SeederDataCreationType.Loaded,
+                x.ToImmutableList()
+             ));
 
         return nonLoadedProps
             .Concat(loadedProps)
+            .Concat(jsonProps)
             .Where(x => x.Key != SeederDataCreationType.DoNotCreate)
             .ToImmutableDictionary();
     }

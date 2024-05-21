@@ -16,6 +16,7 @@ public sealed class SeederEntityInfo
     public bool IsPrincipal {  get; set; }
     public List<object>? PossibleValues { get; set; }
     public List<SeederPropertyInfo> Properties { get; set; } = new();
+    public List<EntityCreatedFromJsonInfo> JSONInfo { get; set; } = new();
     public SeederEntityInfo(Type entityType)
     {
         EntityType = entityType;
