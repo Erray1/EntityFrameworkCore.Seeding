@@ -4,6 +4,25 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>EFCore.Seeding</Title>
+    <Authors>Erray</Authors>
+    <Description>Package for generating data for relational databases using EntityFrameworkCore</Description>
+    <PackageProjectUrl>https://github.com/Erray1/EntityFrameworkCore.Seeding</PackageProjectUrl>
+    <PackageIcon>eff612a4-c73a-4bb9-9f8f-01fb377b0f24.jpg</PackageIcon>
+    <RepositoryUrl>https://github.com/Erray1/EntityFrameworkCore.Seeding</RepositoryUrl>
+    <PackageTags>Creation, Data, Seeder, Relational, Generation, Seeding, Random, EFCore</PackageTags>
+    <AnalysisLevel>none</AnalysisLevel>
+    <SignAssembly>False</SignAssembly>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <WarningLevel>0</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <WarningLevel>0</WarningLevel>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +32,20 @@
 
   <ItemGroup>
     <Folder Include="DI\Services\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\Downloads\eff612a4-c73a-4bb9-9f8f-01fb377b0f24.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

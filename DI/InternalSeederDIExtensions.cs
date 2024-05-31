@@ -38,15 +38,13 @@ public static partial class InternalSeederDIExtensions
         var seederType = typeof(TSeeder);
 
         var seederModel = (TSeeder)Activator.CreateInstance(seederType)!;
-        var emptySeederModelInfo = SeederModelScaffolder.CreateEmptyFromDbContext<TDbContext>();
-        var builder = new SeederModelBuilder(emptySeederModelInfo);
-        seederModel.CreateModel(builder);
+        var seederModelInfo = SeederModelScaffolder.CreateEmptyFromDbContext<TDbContext>();
+        var builder = new SeederModelBuilder(seederModelInfo);
+        seederModel.ConfigureModel(builder);
 
-        var model = builder.Build();
+        SeederModelValidator.ThrowExceptionIfInvalid(seederModelInfo);
 
-        SeederModelValidator.ThrowExceptionIfInvalid(model);
-
-        services.AddKeyedSingleton(typeof(TDbContext).Name, new SeederModelProvider(model));
+        services.AddKeyedSingleton(typeof(TDbContext).Name, new SeederModelProvider(seederModelInfo));
 
         return services;
     }
