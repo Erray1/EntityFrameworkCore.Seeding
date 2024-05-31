@@ -18,7 +18,7 @@ public class EntityCreatedFromJsonInfo
         { 
             if (partialCreation && value)
             {
-                throw new InvalidOperationException("Cannot partially specify properties of entity created from json after using WithAllProperties() method")
+                throw new InvalidOperationException("Cannot partially specify properties of entity created from json after using WithAllProperties() method");
             };
             partialCreation = value;
         } 

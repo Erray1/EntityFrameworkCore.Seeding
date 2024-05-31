@@ -9,18 +9,44 @@ namespace EntityFrameworkCore.Seeding.DI;
 
 public class SeederOptionsProvider : ISeederOptionsProvider
 {
-    private readonly SeederOptions _options;
+    private SeederOptions _options;
     public SeederOptionsProvider(SeederOptions options)
     {
         _options = options;
     }
+
+    /// <summary>
+    ///     Gets a copy of configured options
+    /// </summary>
+    /// <returns>
+    ///     A copy of options
+    /// </returns>
     public SeederOptions GetOptions()
     {
-        return _options;
+        SeederOptions optionsCopy = new SeederOptions();
+        var properties = typeof(SeederOptions).GetProperties();
+        foreach (var property in properties)
+        {
+            var value = property.GetValue(_options);
+            property.SetValue(optionsCopy, value, null);
+        }
+        return optionsCopy;
     }
 
-    public SeederOptions ReconfigureOptions()
+    /// <summary>
+    ///     Reconfigures options for certain seeder
+    /// </summary>
+    /// <returns>SeederOptionsBuilder for further configuration</returns>
+    /// <exception cref="InvalidOperationException"></exception>
+    public ISeederOptionsBuilder ReconfigureOptions()
     {
-        throw new NotImplementedException();
+        if (!_options.AllowOptionsChanging)
+        {
+            throw new InvalidOperationException("You cannot change options in runtime. If you want to do this, call AllowOptionsReconfiguringInRuntime() on ISeederOptionsBuilder in bootup");
+        }
+
+        var newOptions = new SeederOptions();
+        _options = newOptions;
+        return new SeederOptionsBuilder(newOptions);
     }
 }

@@ -6,7 +6,11 @@ using System.Linq.Expressions;
 using System.Text.Json;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
-public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
+/// <summary>
+/// Main class for configuring seeder entity
+/// </summary>
+/// <typeparam name="TEntity">Type of entity being configured</typeparam>
+public sealed class SeederEntityBuilder<TEntity>
     where TEntity : class
 {
     private readonly SeederModelInfo _model;
@@ -18,14 +22,24 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         _entity = entity;
         _model = model;
     }
-    public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values, bool mixValues = false,
-        params string[] exceptPropertiesNames) 
+    /// <summary>
+    ///     Sets values of which the data will be generated
+    /// </summary>
+    /// <remarks>
+    ///     Uses only those properties that have a value in each instance
+    /// </remarks>
+    /// <param name="values"></param>
+    /// <param name="exceptPropertiesNames">Properties that will be excluded from pool</param>
+    /// <returns>Entity builder for further configuration</returns>
+    public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values,
+        string[]? exceptPropertiesNames = null) 
     {
         var properties = typeof(TEntity).GetProperties();
         var props = properties
             .Where(prop => values
                 .Select(x => prop.GetValue(x))
-                .Any(x => x is not null) // check
+                .Any(x => x is not null)
+                && exceptPropertiesNames is not null
                 && !exceptPropertiesNames.Contains(prop.Name))
             .Select(x => new PropertyInfoAndPool
             {
@@ -38,7 +52,6 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
 
         foreach (var prop in props) {
             prop.PropertyInfo.IsConfigured = true;
-            prop.PropertyInfo.ShuffleValues = mixValues;
             prop.PropertyInfo.DataCreationType = Core.SeederDataCreationType.FromGivenPool;
         }
         return this;
@@ -50,25 +63,40 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         public List<object> Pool { get; set; }
     }
 
-    public SeederEntityBuilder<TEntity> HasValues(SeederStockDataCollection values, bool strictPropertyNameMatching = true)
+    /// <summary>
+    ///     Data will be generated from values of chosen collection
+    /// </summary>
+    /// <param name="values">Stock collection</param>
+    /// <returns>Entity builder for further configuration</returns>
+    /// <exception cref="NotImplementedException"></exception>
+    public SeederStockDataEntityBuilder<TEntity> HasValues(SeederStockDataEntityCollection values)
     {
         throw new NotImplementedException();
-        _entity.LoadsData = true;
-        _entity.LoadedValues = values;
-        _entity.StrictMatchingForLoadedData = strictPropertyNameMatching;
-        values.MarkEveryPropertyMappedToCollectionAsConfigured(_entity.Properties, strictPropertyNameMatching);
-
-        return this;
+        //return new SeederStockDataEntityBuilder<TEntity>(_entity, values);
     }
+
+    /// <summary>
+    ///     Data will be generated from json
+    /// </summary>
+    /// <param name="jsonAbsolutePath"></param>
+    /// <param name="options"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
     public SeederJsonCreationBuilder<TEntity> HasValues(string jsonAbsolutePath, JsonSerializerOptions? options = null)
     {
         throw new NotImplementedException();
-        if (options is null) options = JsonSerializerOptions.Default;
-        EntityCreatedFromJsonInfo jsonInfo = new(jsonAbsolutePath, options);
-        _entity.JSONInfo.Add(jsonInfo);
-        return new SeederJsonCreationBuilder<TEntity>(_entity, jsonInfo);
+        //if (options is null) options = JsonSerializerOptions.Default;
+        //EntityCreatedFromJsonInfo jsonInfo = new(jsonAbsolutePath, options);
+        //_entity.JSONInfo.Add(jsonInfo);
+        //return new SeederJsonCreationBuilder<TEntity>(_entity, jsonInfo);
     }
 
+    /// <summary>
+    ///     Sets probability of nullable relationship. Used in 1:1 and 1:N on dependent side
+    /// </summary>
+    /// <typeparam name="TRelatedEntity">Type of related entity</typeparam>
+    /// <param name="probability"></param>
+    /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(double probability)
     {
         var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
@@ -77,6 +105,14 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         return this;
     }
 
+    /// <summary>
+    ///     Sets number of connections in N:N relationships
+    /// </summary>
+    /// <typeparam name="TRelatedEntity">Type of related entities</typeparam>
+    /// <param name="timesConnected">Number of connections</param>
+    /// <param name="locality">Offset</param>
+    /// <returns>Entity builder for further configuration</returns>
+    /// <exception cref="ArgumentException"></exception>
     public SeederEntityBuilder<TEntity> HasNumberOfConnectionsInManyToMany<TRelatedEntity>(int timesConnected, int locality = 0)
     {
 
@@ -94,6 +130,9 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         return this;
     }
 
+    /// <summary>
+    ///     Data of non-configured properties will be generated from random pool
+    /// </summary>
     public void HasRandomValues()
     {
         var notConfiguredProperties = getNotConfiguredProperties();
@@ -106,18 +145,39 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         _entity.IsConfigured = true;
     }
 
+    /// <summary>
+    ///     Sets number of created instances
+    /// </summary>
+    /// <param name="timesCreated">Number of created instances</param>
+    /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated)
     {
         _entity.TimesCreated = timesCreated;
         return this;
     }
 
+    /// <summary>
+    ///     Sets number of created instances with offset
+    /// </summary>
+    /// <param name="timesCreated">Number of created instances</param>
+    /// <param name="locality">Offset</param>
+    /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated, int locality)
     {
         _entity.TimesCreated = timesCreated + new Random(_entity.GetHashCode()).Next(-locality, locality);
         return this;
     }
 
+    /// <summary>
+    ///     Gets builder for configations of entity`s property
+    /// </summary>
+    /// <remarks>
+    ///     Do not configure properties which are used as principal or foreign key or collection of keys in relationships
+    ///     These properties are excluded from model for later binding
+    /// </remarks>
+    /// <typeparam name="TProperty">Type of property being configured</typeparam>
+    /// <param name="propertyExpression">Expression of property</param>
+    /// <returns>Entity builder for further configuration</returns>
     public SeederPropertyBuilder<TProperty> Property<TProperty>(Expression<Func<TEntity, TProperty>> propertyExpression)
     {
         var property = propertyExpression.GetPropertyAccess();
@@ -127,6 +187,13 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         
         return new SeederPropertyBuilder<TProperty>(propertyInfo);
     }
+    /// <summary>
+    ///     Shuffles values of entities
+    /// </summary>
+    /// <remarks>
+    ///     Used in combination with HasValues(IEnumerable<TEntity> entities) method
+    /// </remarks>
+    /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> ShuffleValues()
     {
         _entity.ShuffleValues = true;
@@ -137,7 +204,14 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
         return this;
     }
     
-    public SeederEntityBuilder<TEntity> DoNotCreate()
+    /// <summary>
+    ///     Excludes entity from model
+    /// </summary>
+    /// <remarks>
+    ///     Entity is exluded from creation and from all relationships
+    /// </remarks>
+    /// <returns></returns>
+    public void DoNotCreate()
     {
         var relationsToRemove = _model.Relations
             .Where(x => x.PrincipalEntityInfo == _entity
@@ -157,8 +231,6 @@ public sealed class SeederEntityBuilder<TEntity> : ISeederEntityBuilder
 
         _model.Entities.Remove(_entity);
         _entity.DoCreate = false;
-
-        return this;
     }
 
     private List<SeederPropertyInfo> getNotConfiguredProperties()

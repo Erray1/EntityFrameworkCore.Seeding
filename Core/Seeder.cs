@@ -10,14 +10,16 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace EntityFrameworkCore.Seeding.Core;
 
+/// <summary>
+///     Main class used for seeding data.
+///     Can be injected to other services.
+/// </summary>
+/// <typeparam name="TSeederModel">Type of used SeederModel</typeparam>
+/// <typeparam name="TDbContext">Type of used DbContext</typeparam>
 public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposable
     where TDbContext : DbContext
     where TSeederModel : SeederModel<TDbContext>
 {
-    private readonly SeederOptions _seederOptions;
-
-    private readonly IServiceProvider _serviceProvider;
-    private readonly TDbContext _dbContext;
 
     private readonly SeederEntityCreator<TDbContext> _entitiesCreator;
     private Dictionary<SeederEntityInfo, List<object>> _createdEntities;
@@ -28,17 +30,17 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
     public Seeder(
         IServiceProvider serviceProvider,
         SeederEntityBinder<TDbContext> entityBinder,
-        SeederEntityAdder<TDbContext> entityAdder,
-        TDbContext dbContext)
+        SeederEntityAdder<TDbContext> entityAdder)
     {
-        _seederOptions = serviceProvider.GetRequiredKeyedService<SeederOptionsProvider>(typeof(TDbContext).Name).GetOptions();
-        _serviceProvider = serviceProvider;
         _entitiesCreator = serviceProvider.GetRequiredService<SeederEntityCreator<TDbContext>>();
         _entityBinder = entityBinder;
         _entityAdder = entityAdder;
-        _dbContext = dbContext;
     }
-
+    /// <summary>
+    ///     Starts the seeding process
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async Task ExecuteSeedingAsync(CancellationToken cancellationToken)
     {
         // cancellationToken.Register(async () => await DisposeAsync());

@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EntityFrameworkCore.Seeding
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EFCoreSeederConsumer", "..\EFCoreSeederConsumer\EFCoreSeederConsumer.csproj", "{9A1B44F9-45D5-426A-A5B1-70D6888206C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntityFrameworkCore.Seeding.Test", "..\EntityFrameworkCore.Seeding.Test\EntityFrameworkCore.Seeding.Test.csproj", "{01BF94B6-0F4D-4CD5-8CFE-B1DAAEC7CE65}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{9A1B44F9-45D5-426A-A5B1-70D6888206C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A1B44F9-45D5-426A-A5B1-70D6888206C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A1B44F9-45D5-426A-A5B1-70D6888206C1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{01BF94B6-0F4D-4CD5-8CFE-B1DAAEC7CE65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01BF94B6-0F4D-4CD5-8CFE-B1DAAEC7CE65}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01BF94B6-0F4D-4CD5-8CFE-B1DAAEC7CE65}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01BF94B6-0F4D-4CD5-8CFE-B1DAAEC7CE65}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

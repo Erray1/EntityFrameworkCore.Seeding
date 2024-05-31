@@ -72,8 +72,7 @@ public class EntityCreationChainLinker
     private ImmutableDictionary<SeederDataCreationType, ImmutableList<SeederPropertyInfo>> groupPropertiesByCreationType(SeederEntityInfo entity)
     {
         var nonLoadedProps = entity.Properties
-            .Where(x => x.PossibleLoadedValues is null)
-            .Where(x => x.DataCreationType != SeederDataCreationType.FromJSON)
+            .Where(x => x.DataCreationType != SeederDataCreationType.FromJSON && x.DataCreationType != SeederDataCreationType.Loaded)
             .GroupBy(x => x.DataCreationType)
             .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
                 (
@@ -83,7 +82,7 @@ public class EntityCreationChainLinker
 
         var jsonProps = entity.Properties
             .Where(x => x.DataCreationType == SeederDataCreationType.FromJSON)
-            .GroupBy(x => x.JsonInfo.JsonAbsolutePath)
+            .GroupBy(x => x.JsonInfo!.JsonAbsolutePath)
             .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
                 (
                 SeederDataCreationType.FromJSON,
@@ -91,8 +90,8 @@ public class EntityCreationChainLinker
              ));
 
         var loadedProps = entity.Properties
-            .Where(x => x.PossibleLoadedValues is not null)
-            .GroupBy(x => x.PossibleLoadedValues)
+            .Where(x => x.DataCreationType == SeederDataCreationType.Loaded)
+            .GroupBy(x => x.PropertyStockCollection!.ParentEntityCollection)
             .Select(x => new KeyValuePair<SeederDataCreationType, ImmutableList<SeederPropertyInfo>>
                 (
                 SeederDataCreationType.Loaded,

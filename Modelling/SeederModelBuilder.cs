@@ -3,25 +3,33 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
 
-public class SeederModelBuilder : ISeederBuilder, ISeederModelBuilder
-{
+/// <summary>
+/// Main class for building seeder model
+/// </summary>
+public class SeederModelBuilder 
+{ 
     private readonly SeederModelInfo _model;
     public SeederModelBuilder(SeederModelInfo model)
     {
         _model = model;
     }
-    public SeederModelInfo Build()
-    {
-        return _model;
-    }
 
+    /// <summary>
+    ///     Method for entity configuring
+    /// </summary>
+    /// <typeparam name="TEntity">Entity being configured</typeparam>
+    /// <returns>Builder for entity configuration</returns>
     public SeederEntityBuilder<TEntity> Entity<TEntity>()
         where TEntity : class
     {
         var entityInfo = _model.Entities.Single(x =>  x.EntityType == typeof(TEntity));
         return new SeederEntityBuilder<TEntity>(entityInfo, _model);
     }
-    public void RandomizeEveryEntity()
+
+    /// <summary>
+    /// Randomizes configuration
+    /// </summary>
+    public void RandomizeConfiguration()
     {
         foreach (var entity in _model.Entities)
         {

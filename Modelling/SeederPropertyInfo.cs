@@ -28,10 +28,12 @@ public class SeederPropertyInfo
     public Type PropertyType { get; set; }
     public string PropertyName { get; set; }
     public List<object>? PossibleValuesPool { get; set; }
-    public SeederStockDataPropertyCollection? PossibleLoadedValues { get; set; }
     public bool AreValuesRandom { get; set; } = false;
-    public EntityCreatedFromJsonInfo JsonInfo { get; set; }
+    public EntityCreatedFromJsonInfo? JsonInfo { get; set; }
     public bool ShuffleValues { get; set; } = false;
+    public bool IsLoaded { get; set; } = false;
+    public SeederStockDataPropertyCollection? PropertyStockCollection { get; set; }
+
     private SeederDataCreationType dataCreationType;
     public SeederDataCreationType DataCreationType { 
         get

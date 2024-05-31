@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace EntityFrameworkCore.Seeding.Core;
+
 public class SeederInitialStarter<TSeederModel, TDbContext> : BackgroundService
     where TDbContext : DbContext
     where TSeederModel : SeederModel<TDbContext>

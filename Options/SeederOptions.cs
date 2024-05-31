@@ -4,6 +4,9 @@ using EntityFrameworkCore.Seeding.Logging;
 
 namespace EntityFrameworkCore.Seeding.Options;
 
+/// <summary>
+/// Class containing options for certain seeder
+/// </summary>
 public class SeederOptions
 {
     public bool OverrideExistingData { get; set; } = true;
@@ -19,4 +22,5 @@ public class SeederOptions
     public Type? LoggerType { get; set; }
     public bool ArtificialModelConfiguring { get; set; } = false;
     public string? GPTToken { get; set; }
+    public bool AllowOptionsChanging { get; set; } = true;
 }

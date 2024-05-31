@@ -11,7 +11,7 @@ public sealed class SeederEntityInfo
     public Type EntityType { get; init; }
     public int TimesCreated { get; set; }
     public bool LoadsData { get; set; } = false;
-    public SeederStockDataCollection? LoadedValues { get; set; }
+    public SeederStockDataEntityCollection? LoadedValues { get; set; }
     public bool StrictMatchingForLoadedData { get; set; }
     public bool IsPrincipal {  get; set; }
     public List<object>? PossibleValues { get; set; }
