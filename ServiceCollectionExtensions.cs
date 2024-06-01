@@ -34,7 +34,7 @@ public static class SeederServiceCollectionExtensions
             throw new InvalidDataException($"For TSeederModel type parameter provide custom type that inherits SeederModel and overrides {mainMethodName}");
         }
         services.ConfigureSeederOptions<TDbContext, TSeederModel>(optionsAction, out SeederOptions options);
-        services.ConfigureSeederModel<TDbContext, TSeederModel>(options.ArtificialModelConfiguring);
+        services.ConfigureSeederModel<TDbContext, TSeederModel>();
         if (options.HasInitialBootup)
         {
             services.AddInitialSeedingServices<TDbContext, TSeederModel>();
