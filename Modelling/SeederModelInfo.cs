@@ -2,7 +2,7 @@
 
 namespace EntityFrameworkCore.Seeding.Modelling;
 
-public sealed class SeederModelInfo : SeederInfoBase
+public sealed class SeederModelInfo
 {
     public SeederModelInfo()
     {

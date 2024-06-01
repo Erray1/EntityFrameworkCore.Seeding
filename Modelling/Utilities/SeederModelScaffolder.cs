@@ -105,7 +105,6 @@ public static class SeederModelScaffolder
                 && x.PropertyType == principalNavigationProperty.PropertyType);
             relation.PrincipalEntityInfo.Properties.Remove(principalPropertyToRemove);
 
-            # warning убирает навигацию, но не внешний ключ
             if (relation.DependentEntityHasNavigation)
             {
                 var dependentNavigationProperty = relation.DependentNavigationProperty;

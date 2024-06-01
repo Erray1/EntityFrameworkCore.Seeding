@@ -34,14 +34,17 @@ public sealed class SeederEntityBuilder<TEntity>
     public SeederEntityBuilder<TEntity> HasValues(IEnumerable<TEntity> values,
         string[]? exceptPropertiesNames = null) 
     {
+        if (exceptPropertiesNames is null)
+        {
+            exceptPropertiesNames = [];
+        }
         var properties = typeof(TEntity).GetProperties();
         var props = properties
             .Where(prop => values
                 .Select(x => prop.GetValue(x))
                 .Any(x => x is not null)
-                && exceptPropertiesNames is not null
                 && !exceptPropertiesNames.Contains(prop.Name))
-            .Select(x => new PropertyInfoAndPool
+            .Select(x => new
             {
                 PropertyInfo = _entity.Properties
                 .First(prop => prop.PropertyName == x.Name
@@ -55,12 +58,6 @@ public sealed class SeederEntityBuilder<TEntity>
             prop.PropertyInfo.DataCreationType = Core.SeederDataCreationType.FromGivenPool;
         }
         return this;
-    }
-
-    class PropertyInfoAndPool
-    {
-        public SeederPropertyInfo PropertyInfo { get; set; }
-        public List<object> Pool { get; set; }
     }
 
     /// <summary>
@@ -80,7 +77,7 @@ public sealed class SeederEntityBuilder<TEntity>
     /// </summary>
     /// <param name="jsonAbsolutePath"></param>
     /// <param name="options"></param>
-    /// <returns></returns>
+    /// <returns>Builder for json configuration</returns>
     /// <exception cref="NotImplementedException"></exception>
     public SeederJsonCreationBuilder<TEntity> HasValues(string jsonAbsolutePath, JsonSerializerOptions? options = null)
     {
@@ -116,7 +113,7 @@ public sealed class SeederEntityBuilder<TEntity>
     public SeederEntityBuilder<TEntity> HasNumberOfConnectionsInManyToMany<TRelatedEntity>(int timesConnected, int locality = 0)
     {
 
-        if (timesConnected <= 0)
+        if (timesConnected - locality <= 0)
         {
             throw new ArgumentException("Number of connections cannot be <= 0.\n If you want to avoid connections, exclude entity from model using DoNotCreate() method");
         }
@@ -124,6 +121,7 @@ public sealed class SeederEntityBuilder<TEntity>
         {
             throw new ArgumentException("Locality cannot be negative");
         }
+        
         var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
         var relation = _model.ManyToManyRelations.Single(x => x.Compare(_entity, relatedEntityInfo));
         relation.SetNumberOfBoundEntitiesFor(_entity, timesConnected);
@@ -140,6 +138,7 @@ public sealed class SeederEntityBuilder<TEntity>
         foreach (var property in notConfiguredProperties)
         {
             property.AreValuesRandom = true;
+            property.DataCreationType = Core.SeederDataCreationType.Random;
             property.IsConfigured = true;
         }
         _entity.IsConfigured = true;

@@ -13,7 +13,7 @@ public class SeederOptions
     public bool SaveDataAfterFinishing { get; set; } = true;
     public bool CanIncreaseDataVolume { get; set; } = false;
     public bool HasVolumeIncreasingFunction { get; set; } = false;
-    public bool HasInitialBootup { get; set; } = true;
+    public bool HasInitialBootup { get; set; } = false;
     public Func<int, int>? VolumeIncreasingFunction { get; set; }
     public HistoryStoreTypes HistoryStorageLocation { get; set; } = HistoryStoreTypes.NoHistory;
     public bool HasLogger { get; set;} = false;

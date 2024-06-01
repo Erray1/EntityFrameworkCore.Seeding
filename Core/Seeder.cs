@@ -12,7 +12,7 @@ namespace EntityFrameworkCore.Seeding.Core;
 
 /// <summary>
 ///     Main class used for seeding data.
-///     Can be injected to other services.
+///     Can be injected into other services.
 /// </summary>
 /// <typeparam name="TSeederModel">Type of used SeederModel</typeparam>
 /// <typeparam name="TDbContext">Type of used DbContext</typeparam>

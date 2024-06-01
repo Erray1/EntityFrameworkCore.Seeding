@@ -35,8 +35,10 @@ public static class SeederServiceCollectionExtensions
         }
         services.ConfigureSeederOptions<TDbContext, TSeederModel>(optionsAction, out SeederOptions options);
         services.ConfigureSeederModel<TDbContext, TSeederModel>(options.ArtificialModelConfiguring);
-
-        services.AddInitialSeedingServices<TDbContext, TSeederModel>();
+        if (options.HasInitialBootup)
+        {
+            services.AddInitialSeedingServices<TDbContext, TSeederModel>();
+        }
         services.AddCoreSeederServices<TDbContext, TSeederModel>();
         if (options.CanIncreaseDataVolume)
         {

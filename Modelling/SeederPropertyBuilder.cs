@@ -28,13 +28,14 @@ public class SeederPropertyBuilder<TProperty>
     /// <summary>
     ///     Property will be created from json
     /// </summary>
-    /// <param name="jsonRelativePath"></param>
+    /// <param name="jsonAbsolutePath"></param>
     /// <returns>Property builder for further configuration</returns>
-    public SeederPropertyBuilder<TProperty> HasValues(string jsonRelativePath)
+    public SeederPropertyBuilder<TProperty> HasValues(string jsonAbsolutePath)
     {
-        _property.IsConfigured = true;
-        _property.DataCreationType = Core.SeederDataCreationType.FromJSON;
-        return this;
+        throw new NotImplementedException();
+        //_property.IsConfigured = true;
+        //_property.DataCreationType = Core.SeederDataCreationType.FromJSON;
+        //return this;
     }
     /// <summary>
     ///     Property will be created from random values

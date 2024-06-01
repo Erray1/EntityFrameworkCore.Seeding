@@ -42,7 +42,8 @@ public class SeederOptionsProvider : ISeederOptionsProvider
     {
         if (!_options.AllowOptionsChanging)
         {
-            throw new InvalidOperationException("You cannot change options in runtime. If you want to do this, call AllowOptionsReconfiguringInRuntime() on ISeederOptionsBuilder in bootup");
+            throw new InvalidOperationException("You cannot change options in runtime." +
+                " If you want to do this, call AllowOptionsReconfiguringInRuntime() on ISeederOptionsBuilder in bootup");
         }
 
         var newOptions = new SeederOptions();

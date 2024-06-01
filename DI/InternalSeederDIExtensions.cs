@@ -13,7 +13,10 @@ namespace EntityFrameworkCore.Seeding.DI;
 
 public static partial class InternalSeederDIExtensions
 {
-    public static IServiceCollection ConfigureSeederOptions<TDbContext, TSeeder>(this IServiceCollection services, Action<ISeederOptionsBuilder>? optionsAction, out SeederOptions options)
+    public static IServiceCollection ConfigureSeederOptions<TDbContext, TSeeder>(
+        this IServiceCollection services,
+        Action<ISeederOptionsBuilder>? optionsAction,
+        out SeederOptions options)
         where TSeeder : SeederModel<TDbContext>
         where TDbContext : DbContext
     {
@@ -31,7 +34,8 @@ public static partial class InternalSeederDIExtensions
         return services;
     }
 
-    public static IServiceCollection ConfigureSeederModel<TDbContext, TSeeder>(this IServiceCollection services, bool isConfigurerArtificial)
+    public static IServiceCollection ConfigureSeederModel<TDbContext, TSeeder>(
+        this IServiceCollection services)
         where TSeeder : SeederModel<TDbContext>
         where TDbContext : DbContext, new()
     {

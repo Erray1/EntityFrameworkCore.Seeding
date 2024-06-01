@@ -42,11 +42,6 @@ public sealed class SeederEntityCreator<TDbContext>
         return createdEntities;
     }
 
-    private void createEntitiesInternal()
-    {
-        
-        createEntitiesInternal();
-    }
     private List<object> createEmptyEntities(SeederEntityInfo entityInfo)
     {
         var entities =  Enumerable.Range(0, entityInfo.TimesCreated)

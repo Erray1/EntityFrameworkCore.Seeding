@@ -25,6 +25,6 @@ public static class SeederValidationRuleChainLinker
             prev = rule;
         }
         return prev!;
-}
+    }
 }
 
