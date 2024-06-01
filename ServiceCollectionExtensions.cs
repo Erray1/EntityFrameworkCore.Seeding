@@ -4,6 +4,7 @@ using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace EntityFrameworkCore.Seeding;
 
@@ -49,7 +50,11 @@ public static class SeederServiceCollectionExtensions
     }
     private static bool dbContextOverridesOnConfiguringMethod<TDbContext>()
     {
-        return typeof(TDbContext).GetMethod("OnConfiguring")!.DeclaringType == typeof(TDbContext);
+        var isDerived = typeof(TDbContext).GetMember("OnConfiguring",
+               BindingFlags.NonPublic
+             | BindingFlags.Instance
+             | BindingFlags.DeclaredOnly).Length != 0;
+        return isDerived;
     }
 }
 

@@ -63,6 +63,12 @@ public static class SeederModelScaffolder
         List<string> handledManyToManyNavigationJoinTypeNames = new();
         foreach (var entityInfo in model.Entities)
        {
+            var primaryKeys = entityTypes
+                .First(e => e.ClrType == entityInfo.EntityType)
+                .FindPrimaryKey();
+
+            removePrimaryKeyPropertiesFromEntity(entityInfo, primaryKeys);
+
             var navigations = allNavigations
                .Where(x => x.DeclaringEntityType.Name == entityInfo.EntityType.FullName);
             var manyToManyNavigations = allManyToManyNavigations
@@ -93,6 +99,23 @@ public static class SeederModelScaffolder
                 handledManyToManyNavigationJoinTypeNames.Add(joinType.Name);
             }
 
+        }
+    }
+    private static void removePrimaryKeyPropertiesFromEntity(SeederEntityInfo entityInfo, IKey? key)
+    {
+        PropertyInfo[] keyProperties = key.Properties
+            .Select(x => x.PropertyInfo)
+            .ToArray();
+
+        foreach (var property in keyProperties)
+        {
+            var seederPropertyInfo = entityInfo.Properties
+                .Single(x => x.PropertyName == property.Name 
+                    && x.PropertyType == property.PropertyType);
+            seederPropertyInfo.DataCreationType = SeederDataCreationType.CreatedID;
+            seederPropertyInfo.IsIdProperty = true;
+            seederPropertyInfo.GenerateId = true;
+            seederPropertyInfo.IsConfigured = true;
         }
     }
     private static void removeRelationalPropertiesFromEntities(SeederModelInfo model)

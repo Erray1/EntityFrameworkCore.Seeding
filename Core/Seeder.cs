@@ -43,13 +43,9 @@ public sealed class Seeder<TSeederModel, TDbContext> : ISeeder //, IAsyncDisposa
     /// <returns></returns>
     public async Task ExecuteSeedingAsync(CancellationToken cancellationToken)
     {
-        // cancellationToken.Register(async () => await DisposeAsync());
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            _createdEntities = _entitiesCreator.CreateEntities()!;
-            _entityBinder.BindEntities(_createdEntities);
-            await _entityAdder.AddEntities(_createdEntities);
-        }
+        _createdEntities = _entitiesCreator.CreateEntities()!;
+        _entityBinder.BindEntities(_createdEntities);
+        await _entityAdder.AddEntities(_createdEntities);
     }
 
 }

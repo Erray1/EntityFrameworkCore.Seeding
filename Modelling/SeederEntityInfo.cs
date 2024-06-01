@@ -1,11 +1,13 @@
 ﻿using EntityFrameworkCore.Seeding.Core.Binding;
 using EntityFrameworkCore.Seeding.Modelling.Utilities;
 using EntityFrameworkCore.Seeding.StockData;
+using System.Reflection;
 
 namespace EntityFrameworkCore.Seeding.Modelling;
 
 public sealed class SeederEntityInfo
 {
+    public PropertyInfo? IdProperty { get; set; }
     public bool DoCreate { get; set; } = true;
     public bool IsConfigured;
     public Type EntityType { get; init; }

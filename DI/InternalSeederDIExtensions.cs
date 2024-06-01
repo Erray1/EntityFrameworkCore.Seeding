@@ -8,6 +8,7 @@ using EntityFrameworkCore.Seeding.Modelling.Validation;
 using EntityFrameworkCore.Seeding.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace EntityFrameworkCore.Seeding.DI;
 
@@ -87,6 +88,8 @@ public static partial class InternalSeederDIExtensions
         services.AddScoped<SeederEntityCreator<TDbContext>>();
         services.AddScoped<EntityCreationChainLinker>();
         services.AddScoped<SeederEntityCreationPolicyFactory>();
+
+        services.TryAddScoped<HttpClient>();
 
         var policies = typeof(SeederPropertiesCreationPolicy).Assembly.GetTypes()
             .Where(t => !t.IsAbstract
