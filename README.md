@@ -30,10 +30,7 @@ builder.Services.AddSeeder<TestContext, TestSeederModel>(options =>
     });
 ```
 
-<code> 
-    InitialBootup() 
-</code>
-method adds IHostedService to IServiceCollection which will execute seeding process automaticaly.
+<code>InitialBootup()</code> method adds IHostedService to IServiceCollection which will execute seeding process automaticaly.
 
 Configure your model using FuentAPI:
 
@@ -78,25 +75,20 @@ public class TestSeederModel : SeederModel<TestContext>
 
 
 
-<b> 
-    Seeding services do not support shadow primary key in a compatment with existing foreign key property in entities
-</b>
+<b> Seeding services do not support shadow primary key in a compatment with existing foreign key property in entities</b>
 
 Now run your application and seeding services will build entities according to your model
 
 ## Dependency Injection
 
-<c> 
-    If you do not want to have initial bootup of seeding services, you can inject it into your services 
-</c> 
-<br>
-
+If you do not want to have initial bootup of seeding services, you can inject it into your services 
 <b> 
     If you want to do so, turn off InitialBootup from seeder options by either removing the method or setting it to false: 
-    <code> 
-        Initialbootup(false) 
-    </code>
 </b>
+<code> 
+    Initialbootup(false) 
+</code>
+
 
 ```
 public class MyService
@@ -112,13 +104,7 @@ public class MyService
     }
 }
 ```
-
-<c> 
-    <code> 
-        Seeder< TSeederModel, TDbContext >
-    </code>
-    instances have scoped lifetime 
-</c>
+<c><code>Seeder<TSeederModel, TDbContext></code>instances have scoped lifetime</c>
 
 ## Options
 Options are not static. You can change them in runtime if you called <code>AllowOptionsReconfiguringInRuntime()</code> method in Program.cs
@@ -130,9 +116,7 @@ optionsProvider.ReconfigureOptions()
     ...
 ```
 
-<c> 
-    SeederOptionsProvider instances have singleton lifetime 
-</c>
+SeederOptionsProvider instances have singleton lifetime 
 
 <br>
 RTU MIREA
