@@ -78,7 +78,7 @@ public static partial class InternalSeederDIExtensions
         where TDbContext : DbContext
 
     {
-        services.AddKeyedScoped<Seeder<TSeeder, TDbContext>>(typeof(TDbContext).Name);
+        services.AddScoped<Seeder<TSeeder, TDbContext>>();
         
         services.AddScoped<SeederEntityBinder<TDbContext>>();
         services.AddScoped<SeederEntityAdder<TDbContext>>();

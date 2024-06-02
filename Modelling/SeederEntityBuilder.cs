@@ -96,6 +96,7 @@ public sealed class SeederEntityBuilder<TEntity>
     /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> HasNotRequiredRelationshipProbability<TRelatedEntity>(double probability)
     {
+        ensureRelationValid<TEntity, TRelatedEntity>();
         var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
         var relation = _model.Relations.Single(x => x.DependentEntityInfo.EntityType == relatedEntityInfo.EntityType);
         relation.BindProbability = probability;
@@ -112,8 +113,8 @@ public sealed class SeederEntityBuilder<TEntity>
     /// <exception cref="ArgumentException"></exception>
     public SeederEntityBuilder<TEntity> HasNumberOfConnectionsInManyToMany<TRelatedEntity>(int timesConnected, int locality = 0)
     {
-
-        if (timesConnected - locality <= 0)
+        ensureRelationValid<TEntity, TRelatedEntity>();
+        if (timesConnected - Math.Abs(locality) <= 0)
         {
             throw new ArgumentException("Number of connections cannot be <= 0.\n If you want to avoid connections, exclude entity from model using DoNotCreate() method");
         }
@@ -125,6 +126,7 @@ public sealed class SeederEntityBuilder<TEntity>
         var relatedEntityInfo = _model.Entities.Single(x => x.EntityType == typeof(TRelatedEntity));
         var relation = _model.ManyToManyRelations.Single(x => x.Compare(_entity, relatedEntityInfo));
         relation.SetNumberOfBoundEntitiesFor(_entity, timesConnected);
+        var joinEntityInfo = _model.Entities.Single(x => x.EntityType == relation.JoinEntityType.ClrType);
         return this;
     }
 
@@ -141,7 +143,6 @@ public sealed class SeederEntityBuilder<TEntity>
             property.DataCreationType = Core.SeederDataCreationType.Random;
             property.IsConfigured = true;
         }
-        _entity.IsConfigured = true;
     }
 
     /// <summary>
@@ -163,6 +164,10 @@ public sealed class SeederEntityBuilder<TEntity>
     /// <returns>Entity builder for further configuration</returns>
     public SeederEntityBuilder<TEntity> TimesCreated(int timesCreated, int locality)
     {
+        if (_entity.IsJoinEntity)
+        {
+            throw new InvalidOperationException("Cannot specify number of created instances of join entity. It is computed automaticaly");
+        }
         _entity.TimesCreated = timesCreated + new Random(_entity.GetHashCode()).Next(-locality, locality);
         return this;
     }
@@ -207,11 +212,15 @@ public sealed class SeederEntityBuilder<TEntity>
     ///     Excludes entity from model
     /// </summary>
     /// <remarks>
-    ///     Entity is exluded from creation and from all relationships
+    ///     Entity is excluded from creation and from all relationships
     /// </remarks>
     /// <returns></returns>
     public void DoNotCreate()
     {
+        if (_entity.IsJoinEntity)
+        {
+            throw new InvalidOperationException("Cannot exclude join entity");
+        }
         var relationsToRemove = _model.Relations
             .Where(x => x.PrincipalEntityInfo == _entity
             || x.DependentEntityInfo == _entity);
@@ -235,6 +244,11 @@ public sealed class SeederEntityBuilder<TEntity>
     private List<SeederPropertyInfo> getNotConfiguredProperties()
     {
         return _entity.Properties.Where(x => !x.IsConfigured).ToList();
+    }
+
+    private void ensureRelationValid<TFromEntity, TToEntity>()
+    {
+
     }
 }
 

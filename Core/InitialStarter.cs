@@ -10,7 +10,8 @@ public class SeederInitialStarter<TSeederModel, TDbContext> : BackgroundService
     where TSeederModel : SeederModel<TDbContext>
 {
     private readonly IServiceProvider _serviceProvider;
-    public SeederInitialStarter(IServiceProvider serviceProvider)
+    public SeederInitialStarter(
+        IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
@@ -18,7 +19,7 @@ public class SeederInitialStarter<TSeederModel, TDbContext> : BackgroundService
     {
         using (var scope = _serviceProvider.CreateAsyncScope())
         {
-            var seeder = (Seeder<TSeederModel, TDbContext>)scope.ServiceProvider.GetRequiredKeyedService(typeof(Seeder<TSeederModel, TDbContext>), typeof(TDbContext).Name);
+            var seeder = (Seeder<TSeederModel, TDbContext>)scope.ServiceProvider.GetRequiredService<Seeder<TSeederModel, TDbContext>>();
             await seeder.ExecuteSeedingAsync(stoppingToken);
         }
         await StopAsync(stoppingToken);

@@ -27,6 +27,10 @@ public sealed class SeederEntityCreator<TDbContext>
         {
             using (var scope = _scopeFactory.CreateScope())
             {
+                if (entityInfo.IsJoinEntity && !entityNeedsFilling(entityInfo))
+                {
+                    continue;
+                }
                 var entities = createEmptyEntities(entityInfo);
 
                 if (entityNeedsFilling(entityInfo))

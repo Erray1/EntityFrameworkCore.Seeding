@@ -26,6 +26,7 @@ public class SeederModelBuilder
         return new SeederEntityBuilder<TEntity>(entityInfo, _model);
     }
 
+
     /// <summary>
     /// Randomizes configuration
     /// </summary>

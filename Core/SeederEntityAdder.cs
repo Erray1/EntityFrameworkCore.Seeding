@@ -36,8 +36,11 @@ public class SeederEntityAdder<TDbContext>
                 AddMethod = x.PropertyType.GetMethod("Add")!
             })
             .ToList();
+        var nonJoinEntities = entities
+            .Where(x => !x.Key.IsJoinEntity)
+            .ToList();
 
-        foreach (var (entity, pool) in entities)
+        foreach (var (entity, pool) in nonJoinEntities)
         {
             var dbSet = dbSets.Single(x => x.DbSetProperty.PropertyType.GetGenericArguments()[0] == entity.EntityType);
             if (_options.OverrideExistingData)

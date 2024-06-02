@@ -22,7 +22,7 @@ public static class SeederModelScaffolder
         var properties = typeof(TDbContext).GetProperties();
         var dbContextEntities = properties
             .Where(x => x.PropertyType.IsGenericType)
-            .Select(x => new DbContextEntityInfo
+            .Select(x => new
             {
                 EntityType = x.PropertyType.GetGenericArguments()[0],
                 Properties = getProperties(x.PropertyType.GetGenericArguments()[0])
@@ -56,18 +56,22 @@ public static class SeederModelScaffolder
         var allManyToManyNavigations = entityTypes
             .SelectMany(x => x.GetSkipNavigations())
             .ToList();
+
+        configureJoinTypes(allManyToManyNavigations, model);
+
         List<EntityRelation> relations = new();
         List<EntityManyToManyRelation> manyToManyRelations = new();
         model.Relations = relations;
         model.ManyToManyRelations = manyToManyRelations;
         List<string> handledManyToManyNavigationJoinTypeNames = new();
         foreach (var entityInfo in model.Entities)
-       {
+        {
             var primaryKeys = entityTypes
                 .First(e => e.ClrType == entityInfo.EntityType)
                 .FindPrimaryKey();
 
             removePrimaryKeyPropertiesFromEntity(entityInfo, primaryKeys);
+            
 
             var navigations = allNavigations
                .Where(x => x.DeclaringEntityType.Name == entityInfo.EntityType.FullName);
@@ -92,13 +96,33 @@ public static class SeederModelScaffolder
                 var joinType = navigation.JoinEntityType;
                 if (handledManyToManyNavigationJoinTypeNames.Contains(joinType.Name)) continue;
                 Type dependentEntityType = navigation.TargetEntityType.ClrType;
-                SeederEntityInfo dependentEntity = model.Entities.Single(x => x.EntityType == dependentEntityType);
-                EntityManyToManyRelation relation = new(entityInfo, dependentEntity, navigation);
+                SeederEntityInfo dependentEntity = model.Entities
+                    .Single(x => x.EntityType == dependentEntityType);
+
+                SeederEntityInfo? joinEntity = model.Entities
+                    .SingleOrDefault(x => x.EntityType == joinType.ClrType);
+
+                EntityManyToManyRelation relation = new(entityInfo, dependentEntity, joinEntity, navigation);
                 manyToManyRelations.Add(relation);
 
                 handledManyToManyNavigationJoinTypeNames.Add(joinType.Name);
             }
 
+        }
+        Console.WriteLine();
+    }
+    private static void configureJoinTypes(IEnumerable<ISkipNavigation> skipNavigations, SeederModelInfo model)
+    {
+        var joinTypes = skipNavigations
+            .Select(x => x.JoinEntityType)
+            .Distinct()
+            .ToList();
+
+        foreach (var joinType in joinTypes)
+        {
+            SeederEntityInfo joinEntityInfo = model.Entities
+                .Single(x => x.EntityType == joinType.ClrType);
+            joinEntityInfo.IsJoinEntity = true;
         }
     }
     private static void removePrimaryKeyPropertiesFromEntity(SeederEntityInfo entityInfo, IKey? key)
@@ -106,6 +130,15 @@ public static class SeederModelScaffolder
         PropertyInfo[] keyProperties = key.Properties
             .Select(x => x.PropertyInfo)
             .ToArray();
+
+        if (entityInfo.IsJoinEntity)
+        {
+            foreach (var property in keyProperties)
+            {
+                PropertyActions.RemoveProperty(property, entityInfo);
+            }
+            return;
+        }
 
         foreach (var property in keyProperties)
         {
@@ -120,45 +153,45 @@ public static class SeederModelScaffolder
     }
     private static void removeRelationalPropertiesFromEntities(SeederModelInfo model)
     {
+        List<EntityRelation> removedRelations = new();
         foreach (var relation in model.Relations)
         {
-            var principalNavigationProperty = relation.PrincipalNavigationProperty;
-            var principalPropertyToRemove = relation.PrincipalEntityInfo.Properties
-                .Single(x => x.PropertyName == principalNavigationProperty.Name
-                && x.PropertyType == principalNavigationProperty.PropertyType);
-            relation.PrincipalEntityInfo.Properties.Remove(principalPropertyToRemove);
+            // If dependent entity is join entity
+            if (model.ManyToManyRelations.Any(x => x.JoinEntityInfo == relation.DependentEntityInfo))
+            {
+                PropertyActions.RemoveProperty(relation.PrincipalNavigationProperty, relation.PrincipalEntityInfo);
+                removedRelations.Add(relation);
+                continue;
+            }
+
+            PropertyActions.RemoveProperty(relation.PrincipalNavigationProperty, relation.PrincipalEntityInfo);
 
             if (relation.DependentEntityHasNavigation)
             {
-                var dependentNavigationProperty = relation.DependentNavigationProperty;
-                var dependentNavigationPropertyToRemove = relation.DependentEntityInfo.Properties
-                    .Single(x => x.PropertyName == dependentNavigationProperty!.Name &&
-                    x.PropertyType == dependentNavigationProperty.PropertyType);
-                relation.DependentEntityInfo.Properties.Remove(dependentNavigationPropertyToRemove);
+                PropertyActions.RemoveProperty(relation.DependentNavigationProperty, relation.DependentEntityInfo);
             }
             foreach (var foreignKeyProperty in relation.DependentForeignKeyProperties)
             {
-                var propertyInfoToRemove = relation.DependentEntityInfo.Properties
-                    .Single(x => x.PropertyName == foreignKeyProperty.Name &&
-                        x.PropertyType == foreignKeyProperty.PropertyType);
-                relation.DependentEntityInfo.Properties.Remove(propertyInfoToRemove);
+                PropertyActions.RemoveProperty(foreignKeyProperty, relation.DependentEntityInfo);
             }
             
         }
+        foreach (var relationToRemove in removedRelations) model.Relations.Remove(relationToRemove);
+
 
         foreach (var relation in model.ManyToManyRelations)
         {
-            var principalNavigationProperty = relation.LeftNavigationProperty;
-            var principalPropertyToRemove = relation.LeftEntityInfo.Properties
-                .Single(x => x.PropertyName == principalNavigationProperty.Name
-                && x.PropertyType == principalNavigationProperty.PropertyType);
-            relation.LeftEntityInfo.Properties.Remove(principalPropertyToRemove);
+            // left navigation collection 
+            PropertyActions.RemoveProperty(relation.LeftNavigationProperty, relation.LeftEntityInfo);
 
-            var dependentNavigationProperty = relation.RightNavigationProperty;
-            var dependentNavigationPropertyToRemove = relation.RightEntityInfo.Properties
-                .Single(x => x.PropertyName == dependentNavigationProperty.Name &&
-                x.PropertyType == dependentNavigationProperty.PropertyType);
-            relation.RightEntityInfo.Properties.Remove(dependentNavigationPropertyToRemove);
+            // right navigation collection
+            PropertyActions.RemoveProperty(relation.RightNavigationProperty, relation.RightEntityInfo);
+
+            // navigation property from join to left
+            PropertyActions.RemoveProperty(relation.JoinEntityData.LeftNavigationFromJoinProperty, relation.JoinEntityInfo);
+
+            // navigation property from join to right
+            PropertyActions.RemoveProperty(relation.JoinEntityData.RightNavigationFromJoinProperty, relation.JoinEntityInfo);
         }
 
     }
@@ -193,10 +226,15 @@ public static class SeederModelScaffolder
             .ToList();
         return properties;
     }
+}
 
-    class DbContextEntityInfo
+file static class PropertyActions
+{
+    public static void RemoveProperty(PropertyInfo? property, SeederEntityInfo entity)
     {
-        public Type EntityType { get; init; }
-        public List<PropertyInfo> Properties { get; init; }
+        if (property is null) return;
+        var propToRemove = entity.Properties
+            .SingleOrDefault(x => x.PropertyName == property.Name);
+        entity.Properties.Remove(propToRemove);
     }
 }
