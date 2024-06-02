@@ -30,7 +30,10 @@ builder.Services.AddSeeder<TestContext, TestSeederModel>(options =>
     });
 ```
 
-<code>InitialBootup()</code> method adds IHostedService to IServiceCollection which will execute seeding process automaticaly.
+<code> 
+    InitialBootup() 
+</code>
+method adds IHostedService to IServiceCollection which will execute seeding process automaticaly.
 
 Configure your model using FuentAPI:
 
@@ -75,14 +78,25 @@ public class TestSeederModel : SeederModel<TestContext>
 
 
 
-<b>Seeding services do not support shadow primary key in a compatment with existing foreign key property in entities
+<b> 
+    Seeding services do not support shadow primary key in a compatment with existing foreign key property in entities
+</b>
 
 Now run your application and seeding services will build entities according to your model
 
 ## Dependency Injection
 
-<c>If you do not want to have initial bootup of seeding services, you can inject it into your services </c> <br>
-<b>If you want to do so, turn off InitialBootup from seeder options by either removing the method or setting it to false: <code>Initialbootup(false)</code></b>
+<c> 
+    If you do not want to have initial bootup of seeding services, you can inject it into your services 
+</c> 
+<br>
+
+<b> 
+    If you want to do so, turn off InitialBootup from seeder options by either removing the method or setting it to false: 
+    <code> 
+        Initialbootup(false) 
+    </code>
+</b>
 
 ```
 public class MyService
@@ -99,7 +113,12 @@ public class MyService
 }
 ```
 
-<c><code>Seeder<TSeederModel, TDbContext></code> instances have scoped lifetime</c>
+<c> 
+    <code> 
+        Seeder< TSeederModel, TDbContext >
+    </code>
+    instances have scoped lifetime 
+</c>
 
 ## Options
 Options are not static. You can change them in runtime if you called <code>AllowOptionsReconfiguringInRuntime()</code> method in Program.cs
@@ -111,13 +130,20 @@ optionsProvider.ReconfigureOptions()
     ...
 ```
 
-<c>SeederOptionsProvider instances have singleton lifetime </c>
+<c> 
+    SeederOptionsProvider instances have singleton lifetime 
+</c>
 
 <br>
-RTU MIREA <br>
-IPTIP <br>
-dp. of Perspective Technologies and Industrial Programming <br>
-gr. EFBO-01-22 <br>
-Dementev Egor Pavlovich (student number - 22T0305) <br>
+RTU MIREA
+<br>
+IPTIP 
+<br>
+dp. of Perspective Technologies and Industrial Programming
+<br>
+gr. EFBO-01-22 
+<br>
+Dementev Egor Pavlovich (student number - 22T0305)
+<br>
 
 #### The library was completed as a course work on the subject of "software creation" 
