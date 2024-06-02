@@ -30,9 +30,9 @@ builder.Services.AddSeeder<TestContext, TestSeederModel>(options =>
     });
 ```
 
-<code>InitialBootup()</code> method adds IHostedService which will execute seeding process automaticaly.
+<code>InitialBootup()</code> method adds IHostedService to IServiceCollection which will execute seeding process automaticaly.
 
-Configure your model using FuentAIP:
+Configure your model using FuentAPI:
 
 ```
 public class TestSeederModel : SeederModel<TestContext>
@@ -73,9 +73,13 @@ public class TestSeederModel : SeederModel<TestContext>
     }
 ```
 
+
+
 <b>*Seeding services do not support shadow primary key in a compatment with existing foreign key property in entities
 
 Now run your application and seeding services will build entities according to your model
+
+## Dependency Injection
 
 <c>If you do not want to have initial bootup of seeding services, you can inject it into your services </c> <br>
 <b>If you want to do so, turn off InitialBootup from seeder options by either removing the method or setting it to false: <code>Initialbootup(false)</code></b>
@@ -106,6 +110,8 @@ optionsProvider.ReconfigureOptions()
     .OverrideExistingData(false)
     ...
 ```
+
+<c>SeederOptionsProvider instances have singleton lifetime </c>
 
 <br>
 RTU MIREA <br>
