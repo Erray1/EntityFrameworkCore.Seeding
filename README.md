@@ -97,6 +97,16 @@ public class MyService
 
 <c>*<code>Seeder<TSeederModel, TDbContext></code> instances have scoped lifetime</c>
 
+## Options
+Options are not static. You can change them in runtime if you called <code>AllowOptionsReconfiguringInRuntime()</code> method in Program.cs
+
+```
+var optionsProvider = serviceProvider.GetKeyedService<SeederOptionsProvider>(typeof(YourDbContextType));
+optionsProvider.ReconfigureOptions()
+    .OverrideExistingData(false)
+    ...
+```
+
 <br>
 RTU MIREA <br>
 IPTIP <br>
